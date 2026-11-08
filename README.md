@@ -1,129 +1,114 @@
 # Whiteflow
 
-**A stablecoin payment gateway for merchants who sell internationally: payment links, payment pages, invoices, QR codes, discount vouchers, multi-currency prices, sales reports and instant settlement in USDT on Whitechain, with a one-line payment button and an SDK. Customers pay with zero gas. Plus Capital: get paid early from future sales.** Testnet only (Whitechain Sepolia).
+USDT payments for merchants on Whitechain. Customers pay no gas, and the money lands in the merchant's own wallet in the same transaction. **Capital** lets a merchant get paid early from future sales. Testnet only (Whitechain Sepolia, chain 1874).
 
-> Status (Nov 7, submission): live on Whitechain testnet at [whiteflow.org](https://whiteflow.org); every acceptance test below links its on-chain transaction. Requirements: `docs/SRS.md`. Design: `ARCHITECTURE.md`. How we built it: `AI_USAGE.md`.
+[Live app](https://whiteflow.org) · [Demo shop](https://shop.whiteflow.org) · [API docs](https://whiteflow.org/docs) · [MCP](https://whiteflow.org/mcp) · Video (2:45): ⟨url⟩
 
-## What makes it different
-- **Zero gas for the payer:** the customer signs once; our relayer pays the gas.
-- **Instant settlement (T+0):** money lands in the merchant's own wallet in the same transaction (included in about 1 s; Whitechain marks it finalized later); we never hold it.
-- **Exact amounts:** the customer signs an authorization for an exact amount, so under- and overpayment (a common problem at crypto gateways) can't happen.
-- **Every receipt is an on-chain transaction** anyone can check.
-- **Easiest to integrate:** a one-line payment button or a small SDK, with signed webhooks.
+## Why it's different
+- Customers pay no gas. They sign once; our relayer pays.
+- The merchant is paid in the same transaction (T+0). We never hold the money.
+- The customer signs for the exact amount, so there's no under- or overpayment.
+- Every receipt is an on-chain transaction anyone can check.
+- Integration is a one-line pay button or a small SDK, with signed webhooks.
 
-### Compared with existing gateways
-| | Whitepay (W Group) | Coinbase Commerce | Whiteflow |
+| | Whitepay | Coinbase Commerce | Whiteflow |
 |---|---|---|---|
-| Where the money lands | A WhiteBIT-side account: deposit addresses and off-chain settlement from WhiteBIT balances ([docs](https://docs.whitebit.com/guides/payments-overview)) | Escrow, then settled in USDC | The merchant's own wallet, in the same transaction |
-| Customer pays gas | Not stated; "Pay with WhiteBIT" moves funds off-chain between WhiteBIT accounts | No (EIP-3009 USDC on Base) | No (EIP-3009 USDT on Whitechain) |
-| Runs on Whitechain | Not mentioned on [whitepay.com](https://whitepay.com) | No | Yes |
-| Fee | 0.4–1.5% of pay-ins ([whitepay.com](https://whitepay.com)) | About 1% (Shopify app listing) | A flat 0.10 USDT inside each payment, which covers the gas |
-| Merchant financing | None listed | None | Revenue advances and invoice claims, repaid from the payment split |
-| Where they're ahead | 200+ coins, POS terminals, fiat payouts | Shopify, scale | — |
+| Money lands in | A WhiteBIT account ([docs](https://docs.whitebit.com/guides/payments-overview)) | Escrow, then USDC | The merchant's wallet, same tx |
+| Payer pays gas | Not stated | No (USDC on Base) | No (USDT on Whitechain) |
+| Runs on Whitechain | Not mentioned | No | Yes |
+| Fee | 0.4–1.5% ([whitepay.com](https://whitepay.com)) | About 1% (Shopify listing) | Flat 0.10 USDT, covers gas |
+| Merchant financing | None listed | None | Advances and invoice claims |
+| Ahead on | 200+ coins, POS, fiat payouts | Shopify, scale | — |
 
-We'd sit next to Whitepay, not replace it: Whitepay covers custodial, many-coin, fiat-settled processing; we're the non-custodial rail on Whitechain itself, with financing that only works when the payment is split on chain.
+We'd sit next to Whitepay, not replace it. Why a chain: one payment is split in a single transaction between the merchant, their investors and the gas fee, by rules fixed in the contract. A card or bank rail can't do that.
 
-## Why this needs on-chain stablecoin settlement
-Repayment is enforced where the money arrives. One customer payment is split, in the same transaction, between the merchant, the investors who financed it and the gas fee, under rules neither the merchant nor we can change. A card rail or bank transfer can't route one payment to three parties by code, and an investor would have to trust the merchant to forward the money. With USDT on Whitechain, any verified investor can fund a café at 3 a.m. and gets repaid in one second.
+## Proof on chain
+Contracts, all verified on Blockscout: [MerchantPay](https://explorer.testnet.whitechain.io/address/0xab817593253a0a37de723072827d88fe0ca54251) · [CapitalMarket](https://explorer.testnet.whitechain.io/address/0xecd63a369d23dfddc6bfac921e41a86760c20abe) · [ClaimToken](https://explorer.testnet.whitechain.io/address/0xce9b171a5c485a41dced9d7f043733bddc26c388) · [InvestorRegistry](https://explorer.testnet.whitechain.io/address/0x293430fae87ca79844c6e3a64e8044078c4d3e74). An older MerchantPay (`0x83b5…73b7`) is paused and unused.
 
-## Demo
-- Live app: [whiteflow.org](https://whiteflow.org) (Whitechain testnet; test mode) · Demo shop: [shop.whiteflow.org](https://shop.whiteflow.org) · Video (2:45): ⟨url⟩
-- Walkthrough = acceptance tests AT-1 to AT-15 (`docs/SRS.md` §6)
+| What happened | Tx |
+|---|---|
+| Gasless 25 USDT checkout; the payer holds 0 WBT | [AT-1](https://explorer.testnet.whitechain.io/tx/0x7e03b5d0c52b6b7d941845b364f78875719c481fc7d4b353187038b504b37a11) |
+| Refund | [AT-2](https://explorer.testnet.whitechain.io/tx/0x8334c4ba867131e999d1d371b1d1a7f13904ae3312eea7373cc53a4c5a04bbeb) |
+| 25 USD payment link: 0.10 fee + 24.90 to the merchant, paid in 3.81 s | [AT-11](https://explorer.testnet.whitechain.io/tx/0x26139ab94216a8e954c977dedc2edda7ccfa921c210cd920ea7f5f2ab6bcf6db) |
+| Demo shop on the SDK in 20 lines ([checkout](apps/shop/api/checkout.ts), [webhook](apps/shop/api/webhook.ts)): a 2.00 USDT espresso in 4.98 s, signed webhook delivered once | [AT-14](https://explorer.testnet.whitechain.io/tx/0x29c9ef20eb208091290df43aa9875e06889134ce323a71f69fe79c35b5606ebd) |
+| Discount code read from Arkiv: 10% off a 6 + 5 USD page, paid 9.90 USDT | [AT-12](https://explorer.testnet.whitechain.io/tx/0xb3e7154028bac909bfd49b4c5da5d261de3482ae93187f2d942267b744020e81) |
+| Priced in euros: 20.00 EUR charged as exactly 22.51 USDT (ECB rate, rounded up) | [AT-13](https://explorer.testnet.whitechain.io/tx/0x6350de188f6c5cc344793b03b70aa6e0184650a3f45d3d5ba81a1811cfee90e9) |
+| Advance: funded, then a 5 USDT sale repays the investor 1 USDT in the same tx, then 0 once the cap is reached | [AT-3](https://explorer.testnet.whitechain.io/tx/0x8d4958ebb6c20d1a1e4a269bfd6736c641f62ca02d6521e94b92934c8f3f6810) → [AT-4](https://explorer.testnet.whitechain.io/tx/0x9fc06d890b53dde51e469e348fc9b9bdaadfc541f82e9fbb2a833a74edba5ec8) → [AT-5](https://explorer.testnet.whitechain.io/tx/0x0269606d7668b50e5c0b8d6dca43449def7b660e92371ff4090fbff199df4360) |
+| Invoice: two investors buy a 100 USDT invoice; the debtor pays 100.10 and they get 60 + 40 in one tx | [A](https://explorer.testnet.whitechain.io/tx/0x6b346413c77effb7f2084103caf93236a47349681729816bb0a850aa95a9ab3c) + [B](https://explorer.testnet.whitechain.io/tx/0xab395b1dd7c452229661dfab86f7efee79700d87bc00aaa7957390c7627d9744) → [AT-7](https://explorer.testnet.whitechain.io/tx/0xd9172e76c1f19d2152d10283a84732ac0ef14680698f7279cfc2c10dd71003b1) |
+| A claim sent to a non-eligible wallet reverts with `ERC7943CannotReceive` | [AT-8](https://explorer.testnet.whitechain.io/tx/0x08f45d4bf2826b350cc065a09888ff5ecf2a064ed12ae662c914b10f889a56f8) |
+| 4.32 s from signature to receipt through the production relayer | [NFR-4](https://explorer.testnet.whitechain.io/tx/0xae8b017188d47bc17db535a9cc395a1663a76931c4765cd55f212c73c794a24a) |
+
+Every acceptance test: [`docs/SRS.md`](docs/SRS.md) §6.
 
 ## Sponsor tracks
-### Whitechain (Operate · Scale · Tokenize; one prize)
-| Requirement | Evidence |
-|---|---|
-| Contracts deployed + verified on 1874 (all full Blockscout matches) | MerchantPay [0xab81…4251](https://explorer.testnet.whitechain.io/address/0xab817593253a0a37de723072827d88fe0ca54251) · CapitalMarket [0xecd6…0abe](https://explorer.testnet.whitechain.io/address/0xecd63a369d23dfddc6bfac921e41a86760c20abe) · ClaimToken [0xce9b…c388](https://explorer.testnet.whitechain.io/address/0xce9b171a5c485a41dced9d7f043733bddc26c388) · InvestorRegistry [0x2934…3e74](https://explorer.testnet.whitechain.io/address/0x293430fae87ca79844c6e3a64e8044078c4d3e74) · the app uses only these; an earlier Phase 2 MerchantPay (0x83b5…73b7) is paused and unused |
-| USDT payment in the main flow | Sale split in one tx [0xae155c49…](https://explorer.testnet.whitechain.io/tx/0xae155c49b9e10c098ff3f6146dd29256c75a52acaac85a3367e0c8e30e3cfb1a) (2 USDT → 0.10 fee + 1.90 merchant; payer 0 WBT) · invoice payment [AT-7](https://explorer.testnet.whitechain.io/tx/0xd9172e76c1f19d2152d10283a84732ac0ef14680698f7279cfc2c10dd71003b1) (100.10 → 60 + 40 to two investors) · advance repayment split [AT-4](https://explorer.testnet.whitechain.io/tx/0x9fc06d890b53dde51e469e348fc9b9bdaadfc541f82e9fbb2a833a74edba5ec8) (a 5 USDT sale sends 1 to the investor in the same tx) · gasless 25 USDT checkout [AT-1](https://explorer.testnet.whitechain.io/tx/0x7e03b5d0c52b6b7d941845b364f78875719c481fc7d4b353187038b504b37a11) · refund [AT-2](https://explorer.testnet.whitechain.io/tx/0x8334c4ba867131e999d1d371b1d1a7f13904ae3312eea7373cc53a4c5a04bbeb) · 4.40 s sign-to-receipt sale [NFR-4](https://explorer.testnet.whitechain.io/tx/0xd1a71cb5e05968f25dcaafd3d84fffe976937286fdc09c4ed0e323308e4b987a), and 4.32 s through the production relayer on Vercel [tx](https://explorer.testnet.whitechain.io/tx/0xae8b017188d47bc17db535a9cc395a1663a76931c4765cd55f212c73c794a24a) (relayer share 2.44 s: checks 0.30, pre-send 0.26, send 0.51, receipt 1.37) |
-| **Operate:** drop-in in ≈20 lines | `apps/shop` integration: **20 lines** ([`api/checkout.ts`](apps/shop/api/checkout.ts) 9: `sessions.create` + redirect; [`api/webhook.ts`](apps/shop/api/webhook.ts) 11: `constructEvent` verifies `MC-Signature`, forged or unsigned → 400); live shop [shop.whiteflow.org](https://shop.whiteflow.org): a 2.00 USDT espresso paid by a 0-WBT guest in 4.98 s [AT-14](https://explorer.testnet.whitechain.io/tx/0x29c9ef20eb208091290df43aa9875e06889134ce323a71f69fe79c35b5606ebd), `payment.succeeded` delivered once and verified; merchant view [payments](docs/screens/merchant-payments-1440.png), customer view [payment link](docs/screens/customer-link-375.png) · [payment page](docs/screens/customer-page-375.png); refund [0xbd91e67e…](https://explorer.testnet.whitechain.io/tx/0xbd91e67e672cf3a1c94e0fbf82335be719e2c77a4e0499328a9b767d3347f939); CSV export ([reports screen](docs/screens/merchant-reports-1440.png), `GET /api/v1/reports.csv`) |
-| **Operate (gateway):** what a merchant gets | Payment links + QR ([screen](docs/screens/merchant-links-qr-1440.png)): a 25 USD pays-once link paid by a 0-WBT guest in 3.81 s [AT-11](https://explorer.testnet.whitechain.io/tx/0x26139ab94216a8e954c977dedc2edda7ccfa921c210cd920ea7f5f2ab6bcf6db) (25 → 0.10 fee + 24.90 merchant) · payment pages ([live page](https://whiteflow.org/p/egAwjNvIhu), [screenshot](docs/screens/customer-page-375.png)) · invoices with line items (paid on chain, financed in the Capital tab: [AT-7](https://explorer.testnet.whitechain.io/tx/0xd9172e76c1f19d2152d10283a84732ac0ef14680698f7279cfc2c10dd71003b1)) · discount vouchers stored on Arkiv ([entity](https://rabdi.explorer.arkiv.network/entity/0xf51f4594de604c3b44ce0238dbd5344ff8313bbac5dcf79ab73c555e8479482c), used in [AT-12](https://explorer.testnet.whitechain.io/tx/0xb3e7154028bac909bfd49b4c5da5d261de3482ae93187f2d942267b744020e81)) · multi-currency prices (USD = USDT 1:1; EUR/GBP/INR/SGD at the ECB rate, AED via its peg; quote locked 10 min): 20.00 EUR at 0.88873 EUR/USD (Frankfurter, 6 Nov) charged exactly 22.51 USDT, rounded up [AT-13](https://explorer.testnet.whitechain.io/tx/0x6350de188f6c5cc344793b03b70aa6e0184650a3f45d3d5ba81a1811cfee90e9) · reports + CSV [screen](docs/screens/merchant-reports-1440.png) (6 Nov IST: 12 payments, 238.61 USDT gross, 1.20 fees, equal to the sum of MerchantPay's on-chain `Paid` events for the merchant, AT-15) · instant T+0 settlements (each row links its on-chain tx; the merchant-only "Network fee we covered" column: [screen](docs/screens/merchant-payments-1440.png)) · signed webhooks (`MC-Signature`) · test-mode API keys · [`/docs`](https://whiteflow.org/docs): quickstart, curl next to the SDK, every endpoint, test scenarios |
-| **Scale:** zero crypto steps for the payer | Customer pays with one "Confirm payment" from a wallet the page creates for them (no WBT, no seed phrase, no chain name) [link at 375 px](docs/screens/customer-link-375.png) → [paid at 375 px](docs/screens/customer-checkout-paid-375.png) |
-| **Scale:** who pays gas / how the relayer gets WBT / what stops draining | The merchant pays a 0.10 USDT fee inside each payment, sent to the relayer in the same tx; at the 6 gwei cap a ≈208k-gas sale costs ≈0.00104 WBT, so the fee covers gas up to ≈6.2 gwei. The relayer is topped up with faucet WBT; turning collected USDT fees back into WBT is a manual YetiTrade swap (the automatic swap was cut for time). Drain guard ([`apps/relayer/src/relayer.ts`](apps/relayer/src/relayer.ts), tests in [`apps/relayer/test/`](apps/relayer/test/)): only MerchantPay `paySale`/`payInvoice`, payers with code refused (incl. EIP-7702), simulate first, gas cap 6 gwei, a payer who keeps causing failed sends waits out a cooldown (by default 15 minutes after 3 failures in 10 minutes) and sending stops after 3 reverts per hour, shared-secret header, Postgres send lock, per-IP and per-payer rate limits, daily WBT budget. Live relayer: [relayer.whiteflow.org/health](https://relayer.whiteflow.org/health); bad calls rejected with the relayer nonce unchanged (AT-10), /health p95 280 ms, rejects p95 ≤ 363 ms (NFR-14) |
-| **Tokenize:** real transfer rules + lifecycle | ERC-1155 claim token with ERC-7943 rules (investor allowlist (simulated KYC), ≤8 holders, maturity lock, admin freeze) in [`ClaimToken.sol`](contracts/src/ClaimToken.sol) and [`InvestorRegistry.sol`](contracts/src/InvestorRegistry.sol); a transfer to a non-eligible wallet reverts on chain with `ERC7943CannotReceive` [AT-8](https://explorer.testnet.whitechain.io/tx/0x08f45d4bf2826b350cc065a09888ff5ecf2a064ed12ae662c914b10f889a56f8); advance funded [AT-3](https://explorer.testnet.whitechain.io/tx/0x8d4958ebb6c20d1a1e4a269bfd6736c641f62ca02d6521e94b92934c8f3f6810) → a 5 USDT sale repays 1 USDT to the investor in the same tx [AT-4](https://explorer.testnet.whitechain.io/tx/0x9fc06d890b53dde51e469e348fc9b9bdaadfc541f82e9fbb2a833a74edba5ec8) → after the cap the investor gets 0 [AT-5](https://explorer.testnet.whitechain.io/tx/0x0269606d7668b50e5c0b8d6dca43449def7b660e92371ff4090fbff199df4360) · invoice financing: two investors buy a 100 USDT invoice [A 58.84](https://explorer.testnet.whitechain.io/tx/0x6b346413c77effb7f2084103caf93236a47349681729816bb0a850aa95a9ab3c) + [B 39.23](https://explorer.testnet.whitechain.io/tx/0xab395b1dd7c452229661dfab86f7efee79700d87bc00aaa7957390c7627d9744) → the debtor pays 100.10 and both are repaid 60 + 40 in one tx [AT-7](https://explorer.testnet.whitechain.io/tx/0xd9172e76c1f19d2152d10283a84732ac0ef14680698f7279cfc2c10dd71003b1) · `canTransfer` returns false for it before anyone signs (AT-8) |
-| Rail proof (Phase 1) | A payer with **0 WBT and nonce 0** sends 1 USDT through our relayer: [tx](https://explorer.testnet.whitechain.io/tx/0xc4629df10e9c3d259253ac368448db50d1783465555d3d0aa19de335f31c847e) (94,034 gas, paid by the relayer) · stub [PullStub](https://explorer.testnet.whitechain.io/address/0x51e2E2A530c9dabe6147D55F9bb7fcD47219325d) |
-| Feedback | `WHITECHAIN_FEEDBACK.md` |
+### Whitechain: Operate, Scale, Tokenize
+- **Operate:** payment links with QR codes, payment pages, invoices, vouchers, prices in USD, EUR, GBP, INR, SGD or AED (quote locked for 10 min), reports and CSV that match the on-chain `Paid` events (AT-15), signed webhooks, test-mode keys and [API docs](https://whiteflow.org/docs).
+- **Scale:** the payer presses one "Confirm payment". No WBT, seed phrase or chain name. The merchant's flat 0.10 USDT fee goes to the relayer in the same tx and covers gas up to about 6.2 gwei. The [relayer](apps/relayer/src/relayer.ts) only sends MerchantPay `paySale`/`payInvoice`, refuses payers with code (incl. EIP-7702), simulates first, caps gas at 6 gwei, limits each payer, pauses after 3 reverts in an hour and keeps a daily WBT budget, all stored in Postgres. Bad calls leave its nonce unchanged (AT-10).
+- **Tokenize:** claims are ERC-1155 tokens with ERC-7943 rules: investor allowlist (simulated KYC), at most 8 holders, maturity lock, admin freeze ([ClaimToken.sol](contracts/src/ClaimToken.sol), [InvestorRegistry.sol](contracts/src/InvestorRegistry.sol)). `canTransfer` answers before anyone signs.
+- Our feedback for the Whitechain team: [WHITECHAIN_FEEDBACK.md](WHITECHAIN_FEEDBACK.md).
 
-### Arkiv (Build on Arkiv)
-Financing offers are read from Arkiv: the investor offer book queries `mcplus.offer.v1` entities live (`capital-arkiv.ts`), and an offer drops out when its entity expires at the deadline. Discount codes are Arkiv entities (`mcplus.voucher.v1`) that expire with the code, and the checkout reads the live entity before applying a code: a missing or expired entity refuses the code, and if Arkiv can't be reached the code is refused while the sale can still be paid without it (`applyVoucher`, FR-ARK-7): code G4AT12 (10% off) is entity [0xf51f…482c](https://rabdi.explorer.arkiv.network/entity/0xf51f4594de604c3b44ce0238dbd5344ff8313bbac5dcf79ab73c555e8479482c), created in tx [0x3e21…1fa2](https://rabdi.explorer.arkiv.network/tx/0x3e215e9579b569847274589e0df6b6b10b3fae6c7baa9cfe13aa8ddc553a1fa2) and expiring 7 Nov 06:30 UTC; the code is stored only as a keyed hash. A customer used it on a 6 + 5 USD page and paid 9.90 USDT on Whitechain [AT-12](https://explorer.testnet.whitechain.io/tx/0xb3e7154028bac909bfd49b4c5da5d261de3482ae93187f2d942267b744020e81). Financing offers are Arkiv entities (`mcplus.offer.v1`) that expire at the offer deadline; the investor offer book reads them (Capital tab). Writer address: `0xF216677A6c7635c34e7dD58927B98D141d538Cbe` · Live proof (Phase 1 probe): create tx [0x2d651b87…771e](https://rabdi.explorer.arkiv.network/tx/0x2d651b87c027419949d12cb650c7ca70ce7b65246e802fc44e213b0fc42b771e) (block 258050; create 3.2 s, `ownedBy` query 285 ms) · Runnable query: [https://rabdi.explorer.arkiv.network/entity-explorer](https://rabdi.explorer.arkiv.network/entity-explorer) with `arkiv.schema = str('mcplus.probe.v1')`, or `node --env-file=../../.env scripts/arkiv-probe.ts` from `apps/web` (needs `ARKIV_PRIVATE_KEY` + `ARKIV_ACCESS_KEY`) · `arkiv/schema.md`, `friction.md`, `reach.md`, `why-arkiv.md`, `how-you-use-arkiv.md`.
+### Arkiv
+Discount codes (`mcplus.voucher.v1`) and financing offers (`mcplus.offer.v1`) are Arkiv entities. Before applying a code, the checkout reads its live entity. A missing or expired one refuses the code; if Arkiv is down, the code is refused but the sale can still be paid (FR-ARK-7). Codes are stored only as a keyed hash. Code G4AT12 was created in [this tx](https://rabdi.explorer.arkiv.network/tx/0x3e215e9579b569847274589e0df6b6b10b3fae6c7baa9cfe13aa8ddc553a1fa2), used in AT-12 and expired on 7 Nov as planned. Offers feed the investor offer book and expire at maturity. Writer: `0xF216677A6c7635c34e7dD58927B98D141d538Cbe`. Notes: [`arkiv/`](arkiv/).
 
-### Ethereum Foundation (Anon-RPC · CROPS)
-Every chain read the app makes in the browser goes through Anon-RPC by default (Nym, Tor fallback), including Arkiv reads; a meter on the dashboard counts them (a production run showed **Private reads 4 of 4**, no CSP violations). The customer pay and checkout pages make no browser chain reads at all (the amount and merchant come from our server), so they can't leak the payer's IP. Exclusions (disclosed): relayer writes over HTTPS, the two mainnet bootstrap reads (eth_call to ethereum-rpc.publicnode.com), explorer history lookups, the server-side read behind the pay and checkout pages, the server's balance check behind "Pay with your wallet" (it answers only enough or not enough), the customer's own wallet's RPC traffic when they choose that option (their wallet, not ours), and, only if the customer presses "Use another wallet or email", Privy and the WalletConnect relay (see Privacy below), and the Nym worker's own plain traffic (directory lookups to validator.nymtech.net, one WSS to a Nym entry gateway, bundle fallbacks unpkg.com / raw.githubusercontent.com after jsDelivr). These carry no wallet data. The dashboard's Content-Security-Policy allows exactly these hosts on `/merchant` pages, plus any `wss:` host for the Nym entry gateway, which varies (not on `/merchant/developers`, which shows a new API secret). The customer pay, checkout and link routes allow no third-party hosts at all. A payment page (`/p`) also loads the merchant's logo from the https URL the merchant set, so that host sees the payer's IP.
-Private-read proof (Phase 1): the app read Whitechain blocks through Nym (e.g. block 12,298,671) with **0 direct RPC requests** in 12 browser test runs; a swapped worker bundle is refused (pinned hash).
-**CROPS:** C: payment functions are permissionless, so anyone can submit a signed authorization if our relayer is down · O: MIT ([`LICENSE`](LICENSE)) · P: private reads by default, no personal data on-chain or on Arkiv · S: non-custodial, keys stay on the user's device.
+### Ethereum Foundation: Anon-RPC, CROPS
+Every chain read the browser makes goes through Anon-RPC by default (Nym, with Tor as fallback), Arkiv reads included. A dashboard meter counts them; a production run showed *Private reads 4 of 4*. The pay and checkout pages make no browser chain reads at all, so they can't leak the payer's IP. In Phase 1 the app read blocks through Nym with 0 direct RPC requests in 12 browser runs, and it refuses a swapped worker bundle (pinned hash).
+
+Disclosed exceptions: relayer writes over HTTPS, two mainnet bootstrap reads, explorer history lookups, the server-side reads behind the pay pages, the payer's own wallet if they pick one, Privy and WalletConnect only if the payer presses that option, and the Nym worker's own traffic. A `/p` payment page loads the merchant's logo from the merchant's https host, which sees the payer's IP. The Content-Security-Policy allows only these hosts: the pay and checkout pages allow just Privy and WalletConnect, and payment links (`/l`) allow none.
+
+CROPS: anyone can submit a signed authorization if our relayer is down (C) · MIT licence (O) · private reads by default, no personal data on chain or on Arkiv (P) · non-custodial, keys stay on the user's device (S).
 
 ## AI assistant (MCP)
-`packages/mcp` is a local MCP server (stdio, also packaged as `whiteflow.mcpb` for Claude Desktop) that manages payment collection from an AI assistant. It has 14 tools: payment links, invoices, customers, `list_payments`, `get_collection_summary` and reminders. It can't move money.
-- **Sandbox (the default):** a simulator on your computer, with no account and no network. Try it with no key.
-- **Testnet:** the live gateway with your `sk_test_` key. The key's merchant must belong to a Whiteflow workspace: sign in on whiteflow.org, then link the wallet in Settings.
-```
-cd packages/mcp && npm ci && npm run pack
-claude mcp add whiteflow --env WHITEFLOW_MODE=testnet --env WHITEFLOW_API_KEY=sk_test_YOUR_KEY -- node "$PWD/dist/bundle/server/index.mjs"
-```
-Or connect any AI from one link, [whiteflow.org/mcp](https://whiteflow.org/mcp): **Add to Claude Desktop**, **Add to Cursor** or **Add to VS Code**, or run `npx -y whiteflow-mcp@0.3.0` ([npm](https://www.npmjs.com/package/whiteflow-mcp)) in any MCP client (Codex, Gemini CLI, Windsurf, Cline, Zed). Leave out both `--env` flags for sandbox mode. Details, the Claude Desktop install and the full tool list: [`packages/mcp/README.md`](packages/mcp/README.md).
-Parts of it are adapted from [Pixa](https://github.com/soumyacodes007/Pixa) (MIT; licence in `packages/mcp/THIRD_PARTY_LICENSES`; ETHGlobal mentors confirmed this reuse is within Start Fresh).
+[`packages/mcp`](packages/mcp/README.md) lets an AI assistant manage payment collection: 14 tools for links, invoices, customers, payments and reminders. It can't move money. Sandbox mode (the default) runs on your computer with no account. Testnet mode uses your `sk_test_` key, whose merchant must be linked to a Whiteflow workspace in Settings.
+- One click for Claude Desktop, Cursor or VS Code: [whiteflow.org/mcp](https://whiteflow.org/mcp)
+- Any MCP client: `npx -y whiteflow-mcp@0.3.0` ([npm](https://www.npmjs.com/package/whiteflow-mcp))
+
+Parts are adapted from [Pixa](https://github.com/soumyacodes007/Pixa) (MIT, see `packages/mcp/THIRD_PARTY_LICENSES`); ETHGlobal mentors confirmed this reuse is within Start Fresh.
 
 ## Architecture
-Full-stack: Next.js frontend, two TypeScript servers (relayer, web API incl. the gateway API: links, pages, vouchers, quotes, reports, settlements, keys, webhooks), a zero-dependency SDK + one-line pay button (`packages/sdk`), Postgres for accounts, workspaces, checkout sessions, links, pages, vouchers, webhooks, audit events and rate limits, and Solidity contracts on Whitechain that hold every money rule.
-
 ```
 Shop server ──POST /api/v1/sessions──► Web API (apps/web) ──► checkout link
 Customer /pay (no chain reads in the browser) ── signs a USDT authorization, no gas
         ▼
 Relayer (apps/relayer): allowlist · payer has no code · signature, balance, window, replay
-        · rate limits · daily gas budget · simulate first ── pays the WBT gas
+        · per-payer limits · daily gas budget · simulate first ── pays the WBT gas
         ▼
 MerchantPay (one tx): pull USDT ─► 0.10 fee to relayer ─► advance holdback to investors ─► rest to merchant
         ▼
 receipt → signed webhook to the shop
 Dashboards read the chain privately via Anon-RPC (Nym), one Multicall per screen; offers live on Arkiv.
 ```
-Contracts: `contracts/` (Solidity 0.8.38, Foundry) · Relayer: `apps/relayer/` (Node, viem) · Apps: `apps/web/`, `apps/shop/` (Next.js 16) · Details: `ARCHITECTURE.md`
+`apps/web`: the Next.js app and gateway API · `apps/relayer`: Node + viem, pays the gas · `packages/sdk`: zero-dependency SDK and pay button · `apps/shop`: the demo shop · `contracts/`: Solidity 0.8.38 (Foundry), every money rule. Postgres holds accounts, sessions, links, webhooks and rate limits. Details: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-## Setup
-Requirements: Node 26, Foundry 1.8.6, git. Everything runs on Whitechain Sepolia (chain 1874); no mainnet funds are needed.
-
+## Run it
+Needs Node 26 and Foundry 1.8.6. The tests need no `.env`; fork tests use the public Whitechain RPC.
 ```bash
 git clone --recursive https://github.com/Vishal4742/whiteflow && cd whiteflow
-cp .env.example .env          # fill in the values; never commit .env
-
-# Contracts (Foundry; fork tests run against Whitechain Sepolia with the real USDT)
-cd contracts && forge build && forge test -vv && cd ..
-
-# Relayer: http://127.0.0.1:8787 locally; production https://relayer.whiteflow.org/health
-cd apps/relayer && npm ci && npm test && npm run dev        # GET /health, POST /relay
-
-# Web app (merchant, investor, customer pages): http://localhost:3000
-cd apps/web && npm ci && npm run typecheck && npm test && npm run dev
-
-# SDK + pay button (zero dependencies)
-cd packages/sdk && npm ci && npm test
-
-# Demo shop on the SDK (20 integration lines)
-cd apps/shop && npm ci && npm run dev
+(cd contracts && forge build && forge test)          # 164 tests
+(cd apps/web && npm ci && npm run typecheck && npm test)
+(cd apps/relayer && npm ci && npm test)
+(cd packages/sdk && npm ci && npm test)
+(cd apps/shop && npm ci && npm test)
 ```
-Test funds: claim WBT at faucet.testnet.whitechain.io, then swap some to the prize USDT (`0xcedfb56113143d55b2358b8cfbb0deb5ad2f55a7`) on testnet.yetitrade.fi. CI runs the same checks on every push (`.github/workflows/ci.yml`).
+To run a server, use `npm run dev` in its folder. The web app (localhost:3000) reads `apps/web/.env.local` (names in `.env.example`). The relayer reads `apps/relayer/.env` (`RPC_URL`, `RELAYER_PRIVATE_KEY`, `RELAY_API_SECRET`, `DATABASE_URL`), the shop `apps/shop/.env` (`GATEWAY_URL`, `GATEWAY_SECRET_KEY`, `GATEWAY_WEBHOOK_SECRET`). Never commit a `.env`.
 
-**Contract tests:** 155 Foundry tests (fork tests against Whitechain Sepolia with the real USDT). Coverage of the four deployed contracts (`forge coverage --ir-minimum`): lines 346/349 (99.1%), branches 92/92 (100%), functions 61/61 (100%). Per contract: CapitalMarket 100% lines, ClaimToken 99.1%, InvestorRegistry 100%, MerchantPay 97.8% (the two missed lines are `_pause`/`_unpause`, an IR line-map artifact; the pause test runs them).
+Test funds: claim WBT at faucet.testnet.whitechain.io, then swap some for the prize USDT (`0xcedfb56113143d55b2358b8cfbb0deb5ad2f55a7`) on testnet.yetitrade.fi.
 
-### Privacy of the payer options
-The default checkout uses a guest key kept in the browser (no email recovery) and loads no third-party scripts. "Pay with your wallet" adds a browser-wallet button (no third party) and an opt-in Privy option (any phone wallet over WalletConnect, or email). Privy loads only when pressed, and the sheet says what it shares. Privy receives the IP address, user agent and a Privy analytics id (Privy 3.51 has no analytics switch); with email it also gets the email, the email wallet's address and the payment approval it signs. The WalletConnect relay sees the IP; its messages are end-to-end encrypted. We clear Privy's local session and analytics id after each checkout, so Privy can't link one browser's checkouts. On chain they are linked: the default guest key is reused, so one browser's payments share one payer address.
+Coverage of the four deployed contracts (`forge coverage --ir-minimum`): 99.1% of lines, 100% of branches and functions. CI runs the same checks on every push.
 
-### Operations (testnet)
-- Our demo wallets were funded once by a seed script from the team wallet (test USDT swapped from faucet WBT on YetiTrade); the app has no faucet button.
-- **Admin trust (testnet):** one deployer key (`0xb4E7…714D`) is the compliance admin and the contract owner. It decides who is an eligible investor, and it can force-transfer claims between eligible investors, freeze claim units and revoke investor eligibility (ERC-7943 rules, simulated KYC), and it can pause MerchantPay. Ownership uses `Ownable2Step`; production would put these roles behind a multisig.
-- The relayer keeps its send lock, daily gas budget and per-payer limits in Postgres (a lease row with a fencing write, FR-REL-10), so they hold across server instances and redeploys. A payer who keeps causing failed sends waits out a cooldown (by default 15 minutes after 3 failures in 10 minutes), and 3 reverts in an hour pause all relaying. Its WBT is refilled by hand (the automatic fee-to-WBT swap, FR-REL-8, wasn't built).
+## Trust and privacy
+- **Payer privacy:** the default checkout keeps a guest key in the browser and loads no third-party scripts. Privy (phone wallet or email) loads only if the payer picks it. It then sees the IP, user agent and an analytics id, plus the email, wallet address and signed approval if they use email; the WalletConnect relay sees the IP. We clear Privy's local session after each checkout. On chain, one browser's payments share one guest address, so they can be linked.
+- **Admin key (testnet):** one deployer key (`0xb4E7…714D`) is both compliance admin and contract owner. It decides who's an eligible investor, and it can force-transfer claims between eligible investors, freeze claim units, revoke eligibility and pause MerchantPay. Ownership uses `Ownable2Step`; production would put these roles behind a multisig.
 
-## Limitations (honest)
-- Testnet only (official USD₮ isn't on Whitechain mainnet yet). Maturity lock 60 s and grace 120 s on testnet so the demo can show them; 1 day / 7 days in production.
-- KYC is simulated: our compliance key keeps an investor allowlist (standing in for WhiteBIT KYC). Cut for time: EAS attestations, debtor acknowledgement, pay-on-due-date, and default and recourse (a claim that is never repaid stays outstanding).
-- A merchant could take sales outside our checkout; default rules, recourse and public sales stats would mitigate this, not prevent it.
-- Investor caps (1 per advance, 2 per invoice) and the rule that an invoice buy leaves a fundable remainder are enforced by our server before relaying, not by the contract (which allows 8 holders), so two first fundings sent in the same few seconds can both pass. Each extra holder adds about 34k gas to a repayment, and the relayer refuses anything above its gas limit rather than pay for a failure.
-- Invoice repayments are limited per payer (10 an hour), not per merchant: a merchant who also controls an invoice's investors could spend the relayer's 0.1 WBT daily gas budget in about 40 heavy repayments, paying about 4 USDT in fees. No funds are at risk; relaying pauses until the next day.
+## Limitations
+- Testnet only: official USD₮ isn't on Whitechain mainnet yet. The maturity lock (60 s) and grace period (120 s) are short so the demo can show them; production would use 1 day and 7 days.
+- KYC is simulated by an allowlist. Not built: EAS attestations, pay-on-due-date, default and recourse (a claim that's never repaid stays outstanding).
+- A merchant could take sales outside our checkout. Default rules and recourse would reduce that, not prevent it.
+- Investor caps (1 per advance, 2 per invoice) are checked by our server, not the contract (which allows 8 holders), so two first fundings sent within seconds can both pass.
+- Invoice repayments are limited per payer (10 an hour), not per merchant. A merchant who also controls an invoice's investors could use up the relayer's 0.1 WBT daily gas budget with about 40 repayments (about 4 USDT in fees). No funds are at risk; relaying resumes the next day.
+- The relayer's WBT is refilled by hand; the automatic fee-to-WBT swap wasn't built.
 
-## What's next (after Mumbai)
-- Pay from another chain: one tested corridor (Ethereum Sepolia USDC into Whitechain USDT) with an exact destination amount and a refund path, before any "any chain" claim.
-- Business accounts with roles, and settlement-address changes that need a second approval.
+## What's next
+Pay from another chain, starting with one tested corridor (Ethereum Sepolia USDC into Whitechain USDT) with an exact amount and a refund path.
 
-## Team and AI usage
-⟨team⟩ · AI usage per file: `AI_USAGE.md`
+## Team
+⟨team⟩ · How we used AI: [AI_USAGE.md](AI_USAGE.md) · Requirements: [docs/SRS.md](docs/SRS.md) · Design: [ARCHITECTURE.md](ARCHITECTURE.md) · [MIT licence](LICENSE)
