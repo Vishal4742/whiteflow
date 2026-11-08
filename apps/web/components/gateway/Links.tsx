@@ -11,6 +11,7 @@ import { SectionLabel, card, field } from "@/components/gateway/Frame";
 import { LinkPill, QrActions, WebhookId } from "@/components/gateway/Share";
 import { PRICE_CURRENCIES, errorText, gatewayClient, type Link, type LinkStatus } from "@/lib/gateway-client";
 import { amountText, linkBody } from "@/lib/gateway-forms";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 /** A link with its expiry already written out on our server (so the server and browser renders match). */
 export interface LinkRow extends Link {
@@ -31,7 +32,7 @@ export function LinksScreen({ links, origin }: { links: LinkRow[]; origin: strin
       <section aria-labelledby="your-links" className="grid gap-4">
         <SectionLabel id="your-links">Your links · {links.length}</SectionLabel>
         {links.length === 0 ? (
-          <p className="text-sm text-ink-muted">No links yet. Create one above and send it in any chat.</p>
+          <EmptyState title="No payment links yet" description="Create one above and send it in any chat." />
         ) : (
           <ul className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {links.map((link) => (
@@ -117,7 +118,7 @@ function NewLink({ origin }: { origin: string }) {
           </div>
         </fieldset>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:col-span-2 xl:col-span-3">
-          <Button type="submit" aria-disabled={busy}>
+          <Button size="md" type="submit" aria-disabled={busy}>
             {busy ? "Creating…" : "Create link"}
           </Button>
           <p className="text-xs text-ink-muted">Customers pay the equivalent of 1 to 1,000 US dollars per payment, at the rate when they pay.</p>
@@ -129,7 +130,7 @@ function NewLink({ origin }: { origin: string }) {
         </p>
       )}
       {created && (
-        <div role="status" className="grid gap-3 rounded-[16px] border border-hairline bg-accent-soft p-4 text-sm">
+        <div role="status" className="grid gap-3 rounded-card border border-hairline bg-accent-soft p-4 text-sm">
           <p>Your link is ready. Send it in any chat, or show its QR code at the counter.</p>
           <LinkPill url={`${origin}/l/${created.slug}`} name="the new link" />
           <QrActions kind="l" id={created.slug} name={created.description} />
@@ -198,15 +199,15 @@ function CancelLink({ link }: { link: Link }) {
       {confirming ? (
         <span role="group" aria-label={`Cancel the link for ${link.description}?`} className="flex flex-wrap items-center justify-end gap-x-2">
           <span className="whitespace-nowrap">Cancel link?</span>
-          <Button variant="quiet" className="whitespace-nowrap" onClick={cancel} aria-disabled={busy}>
+          <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={cancel} aria-disabled={busy}>
             {busy ? "Cancelling…" : "Yes, cancel"}
           </Button>
-          <Button variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
+          <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
             Keep it
           </Button>
         </span>
       ) : (
-        <Button variant="quiet" onClick={() => setConfirming(true)}>
+        <Button size="md" variant="quiet" onClick={() => setConfirming(true)}>
           Cancel
         </Button>
       )}

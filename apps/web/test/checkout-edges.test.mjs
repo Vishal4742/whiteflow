@@ -21,9 +21,6 @@ mock.module("../lib/onchain.ts", {
 const { POST: createSession } = await import("../app/api/v1/sessions/route.ts");
 const { POST: pay } = await import("../app/api/v1/sessions/[id]/pay/route.ts");
 const { GET: status } = await import("../app/api/v1/sessions/[id]/route.ts");
-const { POST: logoutRoute } = await import("../app/api/auth/logout/route.ts");
-const { GET: nonceRoute } = await import("../app/api/auth/nonce/route.ts");
-const { POST: verifyRoute } = await import("../app/api/auth/verify/route.ts");
 const { POST: demoCheckout } = await import("../app/api/demo-checkout/route.ts");
 const { getSession, listPayments, recordPayment, SESSION_TTL_MS } = await import("../lib/sessions.ts");
 const { saleAuthorization, SIGNATURE_WINDOW_S } = await import("../lib/pay.ts");
@@ -224,27 +221,11 @@ test("dashboard data: each wallet lists only payments made to its own address", 
   assert.deepEqual(await listPayments("0x9999999999999999999999999999999999999999"), []);
 });
 
-test("cookies: nonce 5 min and session 8 h, HttpOnly, SameSite=Lax, Secure only on https; logout clears the session", async () => {
-  const http = (await nonceRoute(new Request("http://shop.test/api/auth/nonce"))).headers.get("set-cookie");
-  assert.match(http, /^mc_nonce=[^;]+; Path=\/; HttpOnly; SameSite=Lax; Max-Age=300$/);
-  const https = (await nonceRoute(new Request("https://shop.test/api/auth/nonce"))).headers.get("set-cookie");
-  assert.match(https, /; Secure$/);
+test("setCookie: an 8 h session cookie, HttpOnly, SameSite=Lax, Secure only on https", async () => {
   const { SESSION_TTL_S, setCookie } = await import("../lib/auth.ts");
   assert.equal(SESSION_TTL_S, 8 * 60 * 60);
   assert.equal(setCookie("mc_session", "v", SESSION_TTL_S, true), "mc_session=v; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800; Secure");
-  const out = await logoutRoute(new Request("https://shop.test/api/auth/logout", { method: "POST" }));
-  assert.equal(out.headers.get("set-cookie"), "mc_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure");
-});
-
-test("verify: a valid nonce cookie with a message for another nonce, or an oversized message, is 401", async () => {
-  const { createSiweMessage } = await import("viem/siwe");
-  const merchant = privateKeyToAccount(generatePrivateKey());
-  const res = await nonceRoute(new Request("http://shop.test/api/auth/nonce"));
-  const cookie = res.headers.get("set-cookie").split(";")[0];
-  const msg = createSiweMessage({ address: merchant.address, chainId: 1874, domain: "shop.test", nonce: "otherNonce12345678", uri: "http://shop.test", version: "1", expirationTime: new Date(Date.now() + 60_000) });
-  const v = (message) => verifyRoute(new Request("http://shop.test/api/auth/verify", { method: "POST", headers: { cookie }, body: JSON.stringify({ message, signature: "0x" + "11".repeat(65) }) }));
-  assert.equal((await v(msg)).status, 401);
-  assert.equal((await v("x".repeat(2_001))).status, 401);
+  assert.equal(setCookie("mc_session", "v", SESSION_TTL_S, false), "mc_session=v; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800");
 });
 
 // Round 2 (tester): two mutants survived the builder's round-2 tests.

@@ -5,8 +5,9 @@ import { EditorialHeader, PlainPage } from "@/components/gateway/Frame";
 import { McpInstall } from "@/components/McpInstall";
 
 export const metadata: Metadata = {
-  title: "Connect your AI · Whiteflow",
+  title: "Connect your AI",
   description: "Add Whiteflow to Claude, Cursor, VS Code, Codex, Gemini CLI or any MCP client: payment links, payments and summaries from your AI assistant.",
+  alternates: { canonical: "/mcp" },
 };
 
 export default function McpPage() {

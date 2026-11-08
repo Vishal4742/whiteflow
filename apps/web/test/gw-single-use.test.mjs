@@ -133,3 +133,47 @@ test("four checkouts of one single-use link claiming at once: exactly one wins",
   const [{ k }] = await query("SELECT count(*)::int AS k FROM app_gw_checkouts WHERE claimed_at IS NOT NULL");
   assert.equal(k, 1);
 });
+
+// code review 2026-11-08 F1: a checkout whose session holds a recorded payment (markCheckoutPaid not run yet) or an
+// attempt with an unknown outcome may have been paid, so it must keep blocking after FREEZE_MS until it is settled.
+async function sessionRow(id, { pending = null, payment = null } = {}) {
+  await query(
+    `INSERT INTO app_web_sessions (id, merchant, merchant_name, amount, order_ref, reference, items, created_at, expires_at, payment, pending)
+     VALUES ($1, $2, 'Bandra Beans', $3, $4, '', '[]'::jsonb, $5, $6, $7::jsonb, $8::jsonb)`,
+    [id, MERCHANT, USDT(25).toString(), `0x${String(n).padStart(64, "0")}`, t, t + 30 * 60_000, payment && JSON.stringify(payment), pending && JSON.stringify(pending)],
+  );
+}
+const UNKNOWN_ATTEMPT = { from: "0x3333333333333333333333333333333333333333", validBefore: "1", amount: USDT(25).toString() };
+
+test("an attempt with an unknown outcome keeps blocking past FREEZE_MS until it is settled (code review 2026-11-08 F1)", async () => {
+  await link("lnk_once", true);
+  const [a, b] = [await checkout("lnk_once"), await checkout("lnk_once")];
+  await claimAmountDue(a, t); // the relay timed out: A's payment may have landed
+  await sessionRow(a, { pending: UNKNOWN_ATTEMPT });
+  await assert.rejects(claimAmountDue(b, t + FREEZE_MS + 1), PAID_ONCE, "no second payment while A's may have landed");
+  await query("UPDATE app_web_sessions SET pending = NULL WHERE id = $1", [a]); // settled: the chain says it never landed
+  assert.equal(await claimAmountDue(b, t + FREEZE_MS + 1), USDT(25));
+});
+
+test("a payment recorded on the session blocks even before markCheckoutPaid ran (code review 2026-11-08 F1)", async () => {
+  await link("lnk_once", true);
+  const [a, b] = [await checkout("lnk_once"), await checkout("lnk_once")];
+  await sessionRow(a, { payment: { paymentId: "7", txHash: null, blockNumber: null, from: UNKNOWN_ATTEMPT.from, paidAt: t } });
+  await assert.rejects(claimAmountDue(b, t + FREEZE_MS + 1), PAID_ONCE);
+});
+
+test("a code's frozen hold still counts while its checkout's outcome is unknown, past HOLD_MS and FREEZE_MS (code review 2026-11-08 F1)", async () => {
+  const { HOLD_MS } = await import("../lib/server/vouchers.ts");
+  await query("INSERT INTO app_gw_vouchers (id, merchant, code, kind, value, expires_at, max_redemptions, created_at) VALUES ('v_once', $1, 'ONCE', 'percent', 50, $2, 1, $3)", [MERCHANT, t + DAY, t]);
+  await link("lnk_many", false);
+  const a = await checkout("lnk_many");
+  assert.equal((await applyVoucher(MERCHANT, "ONCE", a, USDT(25), t)).ok, true);
+  await claimAmountDue(a, t); // freezes A's hold for the attempt
+  await sessionRow(a, { pending: UNKNOWN_ATTEMPT });
+  const later = t + HOLD_MS + FREEZE_MS + 1;
+  const b = `ses_su_${++n}`;
+  await recordCheckout(b, "link", "lnk_many", MERCHANT, USDT(25), { now: later });
+  assert.deepEqual(await applyVoucher(MERCHANT, "ONCE", b, USDT(25), later), { ok: false, reason: "That code has been used up." });
+  await query("UPDATE app_web_sessions SET pending = NULL WHERE id = $1", [a]);
+  assert.equal((await applyVoucher(MERCHANT, "ONCE", b, USDT(25), later)).ok, true, "settled as never landed: the use is free again");
+});

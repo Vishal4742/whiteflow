@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { CopyButton } from "@/components/CopyButton";
 import { AUTH, type Auth, type Method } from "@/lib/docs-reference";
 
-export const card = "lift grid min-w-0 content-start gap-4 rounded-[20px] border border-hairline bg-surface p-5 md:p-6";
+export const card = "lift grid min-w-0 content-start gap-4 rounded-card border border-hairline bg-surface p-5 md:p-6";
 export const textLink = "text-accent underline underline-offset-4";
 /** Halftone grain printed into a surface: one CSS gradient, no image bytes (the same as Frame.tsx's). */
 export const grain = "bg-[radial-gradient(circle_at_1px_1px,color-mix(in_srgb,var(--ink)_7%,transparent)_1px,transparent_1.4px)] bg-size-[4px_4px]";
@@ -93,8 +93,8 @@ export const MiniCode = ({ code }: { code: string }) => (
 );
 
 const CALLOUT = {
-  note: { label: "Note", box: "border-accent/40 bg-accent-soft", ink: "text-accent", icon: "M12 11v6m0-10h.01" },
-  warning: { label: "Warning", box: "border-warning/50 bg-warning/10", ink: "text-warning", icon: "M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" },
+  note: { label: "Note", box: "border-accent/40 bg-accent-soft", ink: "text-accent", text: "text-accent", icon: "M12 11v6m0-10h.01" },
+  warning: { label: "Warning", box: "border-warning/50 bg-warning/10", ink: "text-warning", text: "text-ink", icon: "M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" },
 } as const;
 
 /** A rule worth stopping for: an aside the screen reader announces as a note, named by its label and an icon as well
@@ -108,7 +108,7 @@ export function Callout({ tone = "note", children }: { tone?: keyof typeof CALLO
         <path d={c.icon} />
       </svg>
       <p className="min-w-0 text-ink">
-        <strong className={`eyebrow mr-2 font-normal ${c.ink}`}>{c.label}</strong>
+        <strong className={`eyebrow mr-2 font-normal ${c.text}`}>{c.label}</strong>
         {children}
       </p>
     </aside>
@@ -173,7 +173,7 @@ const stackLabel =
  *  meaning for screen readers when the phone layout changes its display. */
 export function DocTable({ caption, columns, rows }: { caption: string; columns: Column[]; rows: { key: string; cells: ReactNode[] }[] }) {
   return (
-    <div className="min-w-0 md:overflow-hidden md:rounded-[20px] md:border md:border-hairline md:bg-surface">
+    <div className="min-w-0 md:overflow-hidden md:rounded-card md:border md:border-hairline md:bg-surface">
       <table role="table" className="w-full border-collapse text-left text-sm max-md:block md:table-fixed">
         <caption className="sr-only">{caption}</caption>
         <thead role="rowgroup" className="max-md:hidden">
@@ -190,7 +190,7 @@ export function DocTable({ caption, columns, rows }: { caption: string; columns:
             <tr
               key={row.key}
               role="row"
-              className="border-b border-hairline align-top last:border-b-0 max-md:grid max-md:gap-3 max-md:rounded-[20px] max-md:border max-md:bg-surface max-md:p-4 max-md:last:border-b"
+              className="border-b border-hairline align-top last:border-b-0 max-md:grid max-md:gap-3 max-md:rounded-card max-md:border max-md:bg-surface max-md:p-4 max-md:last:border-b"
             >
               {row.cells.map((cell, i) => (
                 <td

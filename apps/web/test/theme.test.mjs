@@ -42,7 +42,13 @@ test("the switch is labelled for both directions and saved under the key the scr
 });
 
 test("the landing, the dashboard (both frames), the docs and the investor pages show the switch", () => {
-  for (const path of ["components/landing/Hero.tsx", "components/dashboard/Shell.tsx", "components/gateway/Frame.tsx", "app/docs/page.tsx", "components/capital/investor/InvestorApp.tsx"]) {
+  // the landing nav and the dashboard sidebar render it themselves
+  for (const path of ["components/landing/Hero.tsx", "components/dashboard/Shell.tsx"]) {
     assert.match(src(path), /<ThemeToggle\b/, path);
+  }
+  // every other page gets it from the one shared top bar, always last in the bar
+  assert.match(src("components/SiteHeader.tsx"), /<ThemeToggle\b/);
+  for (const path of ["components/gateway/Frame.tsx", "app/docs/page.tsx", "components/capital/investor/InvestorApp.tsx"]) {
+    assert.match(src(path), /<SiteHeader\b/, path);
   }
 });

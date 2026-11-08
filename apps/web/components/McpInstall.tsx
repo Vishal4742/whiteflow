@@ -3,8 +3,9 @@
 import { buttonClasses } from "@/components/Button";
 
 // Any MCP client runs the same stdio server (sandbox unless WHITEFLOW_MODE=testnet).
-// published on npm as whiteflow-mcp (packages/mcp, `npm run npm-package`)
-const MCP_ARGS = ["-y", "whiteflow-mcp"];
+// published on npm as whiteflow-mcp (packages/mcp, `npm run npm-package`). Pinned, so a new publish (or a taken-over
+// npm account) never runs on a merchant's machine unreviewed; bump it with packages/mcp/package.json (a web test checks).
+const MCP_ARGS = ["-y", "whiteflow-mcp@0.3.0"];
 const MCP_SERVER = { command: "npx", args: MCP_ARGS };
 const CURSOR_INSTALL = `cursor://anysphere.cursor-deeplink/mcp/install?name=whiteflow&config=${Buffer.from(JSON.stringify(MCP_SERVER)).toString("base64")}`;
 const VSCODE_INSTALL = `vscode:mcp/install?${encodeURIComponent(JSON.stringify({ name: "whiteflow", ...MCP_SERVER }))}`;
@@ -19,7 +20,7 @@ const AGENT_SETUPS: [string, string][] = [
 
 export function McpInstall({ keyHint }: { keyHint: string }) {
   return (
-    <section aria-labelledby="mcp-heading" className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-[16px] border border-hairline bg-surface p-5 md:p-6 shadow-card">
+    <section aria-labelledby="mcp-heading" className="grid grid-cols-[minmax(0,1fr)] gap-4 rounded-card border border-hairline bg-surface p-5 md:p-6 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-4">
         <div>
           <h2 id="mcp-heading" className="text-[17px] font-semibold text-ink">
@@ -69,7 +70,7 @@ export function McpInstall({ keyHint }: { keyHint: string }) {
         {AGENT_SETUPS.map(([client, setup]) => (
           <div key={client}>
             <p className="mb-1.5 text-xs font-medium text-ink">{client}</p>
-            <pre className="overflow-x-auto rounded-[8px] bg-slate-900 p-3.5 font-mono text-xs text-emerald-400">{setup}</pre>
+            <pre tabIndex={0} role="region" aria-label={`${client} setup`} className="data overflow-x-auto rounded-[14px] bg-scene-night p-3.5 text-[12px] text-glass-ink">{setup}</pre>
           </div>
         ))}
         <p className="break-all text-xs text-ink-muted">
@@ -77,7 +78,7 @@ export function McpInstall({ keyHint }: { keyHint: string }) {
           <a className="underline" href="https://www.npmjs.com/package/whiteflow-mcp">
             whiteflow-mcp
           </a>
-          . A hosted connector URL (MCP 2025-11-25, Streamable HTTP) comes in Stage 6.
+          . A hosted connector URL is on the way.
         </p>
       </div>
     </section>

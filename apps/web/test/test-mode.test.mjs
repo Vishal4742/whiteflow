@@ -42,12 +42,12 @@ test("every chain id and chain the app signs or reads with is Whitechain Sepolia
 test("the badge reads \"Test mode · Whitechain testnet\" and has an accessible name", () => {
   const badge = readFileSync(join(ROOT, "components/TestModeBadge.tsx"), "utf8");
   assert.match(badge.replace(/<[^>]+>/g, ""), /Test mode · Whitechain testnet/);
-  assert.match(badge, /role="note" aria-label="Test mode, Whitechain testnet/);
+  assert.match(badge, /role="region" aria-label="Test mode, Whitechain testnet/);
 });
 
 test("the root layout renders the badge above every page, and no page or the Shell repeats it", () => {
   const layout = readFileSync(join(ROOT, "app/layout.tsx"), "utf8");
-  assert.match(layout, /<body[^>]*>\s*<TestModeBadge \/>\s*\{children\}/);
+  assert.match(layout, /<body[^>]*>\s*<a href="#main"[^>]*>\s*Skip to content\s*<\/a>\s*<TestModeBadge \/>\s*\{children\}/, "the skip link, then the badge, then the page");
   const repeats = sources.filter(({ file, text }) => file !== "app/layout.tsx" && file !== "components/TestModeBadge.tsx" && /<TestModeBadge\b/.test(text));
   assert.deepEqual(repeats.map(({ file }) => file), []);
 });

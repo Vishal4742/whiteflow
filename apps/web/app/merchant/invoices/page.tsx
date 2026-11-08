@@ -1,5 +1,6 @@
 // Whiteflow Invoices Workspace (/merchant/invoices):
 // Create, manage and track business invoices and payment links settled to Whitechain in USDT.
+import { formatDate } from "@/lib/format";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Shell } from "@/components/dashboard/Shell";
@@ -14,12 +15,14 @@ import { merchantInvoices, paidLogs, readRelayFee, type Invoice, type PaidLog } 
 import { ackView, acksFor, type InvoiceAck } from "@/lib/server/invoice-acks";
 import { formatUsdt } from "@/lib/usdt";
 
+export const metadata = { title: "Invoices" };
+
 const header = (
   <EditorialHeader
     label="Invoices"
     lede="Issue itemized payment requests with exact net USDT settlement. Customers pay from supported networks with zero gas friction."
   >
-    One invoice. <span className="emphasis">Clear settlement.</span>
+    Invoices, <span className="emphasis">paid on chain.</span>
   </EditorialHeader>
 );
 
@@ -35,7 +38,7 @@ function invoiceRows(invoices: Invoice[], logs: PaidLog[], acks: Map<string, Inv
           {
             id: invoice.id.toString(),
             amountText: formatUsdt(invoice.amount),
-            dueText: new Date(Number(invoice.dueDate) * 1000).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }),
+            dueText: formatDate(Number(invoice.dueDate) * 1000),
             status: invoice.status,
             paidText: invoice.status === "open" && invoice.paid > 0n ? formatUsdt(invoice.paid) : null,
             receiptId: invoice.status === "paid" ? (paidBy.get(invoice.id) ?? null) : null,
@@ -116,9 +119,9 @@ async function InvoicesLoader() {
             subtext="On-chain invoice count"
           />
           <MetricCard
-            label="Settlement Asset"
+            label="Settlement asset"
             value="USDT"
-            subtext="Whitechain Sepolia (T+0)"
+            subtext="On Whitechain testnet"
           />
         </section>
 
@@ -131,8 +134,8 @@ async function InvoicesLoader() {
             feeText={feeText}
           />
         ) : (
-          <section className="grid gap-4 rounded-[16px] border border-hairline bg-surface p-6 shadow-card">
-            <h2 className="text-base font-semibold text-ink">Invoice Issuance Scope</h2>
+          <section className="grid gap-4 rounded-card border border-hairline bg-surface p-6 shadow-card">
+            <h2 className="text-base font-semibold text-ink">Who can issue invoices</h2>
             {pay ? (
               <div className="grid gap-3 text-sm text-ink-muted">
                 <p>

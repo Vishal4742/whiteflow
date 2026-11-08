@@ -2,6 +2,7 @@
 // Keyed by MerchantPay, invoice id and debtor (ids restart on a redeploy; every key keeps its own first ack, security
 // 047 M1). Only our database holds them, never Arkiv (FR-ARK-4).
 import type { Address, Hex } from "viem";
+import { shortAddress as short } from "../format.ts";
 import { query } from "./db.ts";
 
 export interface InvoiceAck {
@@ -29,7 +30,6 @@ export interface DebtorAckView extends AckEntry {
   count: number;
 }
 
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 export const ackEntry = (ack: InvoiceAck): AckEntry => ({ debtor: short(ack.debtor), signed_at: new Date(ack.signedAt).toISOString() });
 
 /** The acks signed for exactly these terms (security 047 L1: same merchant, amount and due date as what they're shown

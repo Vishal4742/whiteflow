@@ -28,7 +28,7 @@ export function RevealOnce({ title, value, noun, envName, children, onDone }: { 
   return (
     <section
       aria-labelledby={id}
-      className="grid min-w-0 gap-3 rounded-[16px] border border-accent bg-accent-soft p-4 starting:translate-y-2 starting:scale-[.98] starting:opacity-0"
+      className="grid min-w-0 gap-3 rounded-card border border-accent bg-accent-soft p-4 starting:translate-y-2 starting:scale-[.98] starting:opacity-0"
       style={{ transition: `opacity 300ms ease, translate 700ms ${SPRING}, scale 700ms ${SPRING}` }}
     >
       <h3 id={id} ref={heading} tabIndex={-1} className="eyebrow text-accent outline-none">
@@ -43,7 +43,7 @@ export function RevealOnce({ title, value, noun, envName, children, onDone }: { 
       </div>
       <p className="text-sm font-medium">You won&apos;t see this {noun} again. Copy it now.</p>
       {children && <p className="text-sm text-ink-muted">{children}</p>}
-      <Button variant="quiet" className="justify-self-start text-sm" onClick={onDone}>
+      <Button size="md" variant="quiet" className="justify-self-start text-sm" onClick={onDone}>
         I&apos;ve saved it
       </Button>
     </section>

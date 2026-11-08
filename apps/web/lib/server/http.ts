@@ -19,14 +19,17 @@ const NO_STORE = { "cache-control": "no-store" };
 
 /** A client mistake with the status and the message the caller sees. */
 export class HttpError extends Error {
-  readonly status: number; // a plain field: Node's type stripping can't run TS parameter properties
-  constructor(status: number, message: string) {
+  readonly status: number; // plain fields: Node's type stripping can't run TS parameter properties
+  readonly retryAfterS: number | undefined; // a 429's Retry-After, in seconds
+  constructor(status: number, message: string, retryAfterS?: number) {
     super(message);
     this.status = status;
+    this.retryAfterS = retryAfterS;
   }
 }
 
-export const fail = (status: number, error: string) => Response.json({ error }, { status, headers: NO_STORE });
+export const fail = (status: number, error: string, retryAfterS?: number) =>
+  Response.json({ error }, { status, headers: retryAfterS ? { ...NO_STORE, "retry-after": String(retryAfterS) } : NO_STORE });
 export const ok = (body: unknown, status = 200) => Response.json(body, { status, headers: NO_STORE });
 
 /** Runs a route body: HttpError → its status; anything else → a 500 that names no internals (NFR-8). Next's own
@@ -37,16 +40,34 @@ export async function handle(run: () => Promise<Response>): Promise<Response> {
     return await run();
   } catch (err) {
     unstable_rethrow(err);
-    if (err instanceof HttpError) return fail(err.status, err.message);
+    if (err instanceof HttpError) return fail(err.status, err.message, err.retryAfterS);
     if (err instanceof DbUnavailable) return fail(503, "The gateway isn't set up on this server yet.");
     console.error("gateway api error:", err instanceof Error ? err.name : typeof err); // never the message: it can hold SQL or URLs
     return fail(500, "Something went wrong on our side. Try again.");
   }
 }
 
+/** The request body as text, at most `maxBytes`: a declared Content-Length over it is refused before anything is read. */
+export async function readText(request: Request, maxBytes = 16_384): Promise<string> {
+  if (Number(request.headers.get("content-length")) > maxBytes) throw new HttpError(413, "That request is too large.");
+  const text = await request.text();
+  if (text.length > maxBytes) throw new HttpError(413, "That request is too large.");
+  return text;
+}
+
 /** The request body as a JSON object, at most `maxBytes`. */
 export async function readJson(request: Request, maxBytes = 16_384): Promise<Record<string, unknown>> {
-  return jsonObject(await request.text(), maxBytes);
+  return jsonObject(await readText(request, maxBytes), maxBytes);
+}
+
+/** The request body parsed as JSON, or null when it isn't JSON (the caller says what's wrong); over `maxBytes` is a 413. */
+export async function readJsonOrNull(request: Request, maxBytes = 16_384): Promise<unknown> {
+  const text = await readText(request, maxBytes);
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
 /** A body already read as text (a route that also hashes it for Idempotency-Key, batch 052) → a JSON object. */
@@ -144,7 +165,7 @@ export function rateLimit(key: string, limit: number, windowMs: number, now = Da
     return;
   }
   hits.set(key, { ...entry, count: entry.count + 1 });
-  if (entry.count + 1 > limit) throw new HttpError(429, TOO_MANY);
+  if (entry.count + 1 > limit) throw new HttpError(429, TOO_MANY, Math.max(1, Math.ceil((entry.resetAt - now) / 1000)));
 }
 
 /** Tests only: forget this instance's in-memory windows. The shared ones are app_web_rate_limits rows, which
@@ -196,7 +217,7 @@ export async function sharedRateLimit(key: string, limit: number, windowMs: numb
   if (++sharedCalls % PRUNE_EVERY === 0) {
     await pruneRateLimits(now).catch((err: unknown) => console.error("rate limit prune failed:", err instanceof Error ? err.name : typeof err));
   }
-  if (count > limit) throw new HttpError(429, TOO_MANY);
+  if (count > limit) throw new HttpError(429, TOO_MANY, Math.ceil(windowMs / 1000)); // at most one window away
 }
 
 /** The caller's IP as Vercel reports it (first x-forwarded-for hop), for rate limits only. */

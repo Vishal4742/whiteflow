@@ -9,7 +9,7 @@ import { invoicePaid, readInvoice, readRelayFee, readUsdtBalance } from "../../.
 import { invoiceAuthorization, parseApproval } from "../../../../../../lib/pay.ts";
 import { NOT_FUNDED, UNKNOWN, relayPayInvoice } from "../../../../../../lib/relay.ts";
 import { invoiceState, isShopInvoice, type InvoiceState } from "../../../../../../lib/settle.ts";
-import { handle } from "../../../../../../lib/server/http.ts";
+import { clientIp, handle, readJsonOrNull, sharedRateLimit } from "../../../../../../lib/server/http.ts";
 import { claimPayment, invoiceAttempt, invoiceLock, releasePayment, setInvoiceAttempt } from "../../../../../../lib/sessions.ts";
 
 // the lock (lib/sessions.ts LOCK_S = 300 s) must outlast the function (security 026 F1)
@@ -43,9 +43,11 @@ export const POST = (request: Request, context: { params: Promise<{ id: string }
 async function post(request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
   const { id } = await params;
   if (!/^[1-9]\d{0,19}$/.test(id)) return fail(404, NOT_FOUND);
+  // code review 2026-11-08 F3: three chain reads before the signature check; a looping caller must not get our IP throttled
+  await sharedRateLimit(`invoice-pay:${clientIp(request)}`, 20, 60_000, "memory");
   const pay = payConfig();
   if (!pay) return fail(503, "Payments aren't live on this server yet.");
-  const approval = parseApproval(await request.json().catch(() => null));
+  const approval = parseApproval(await readJsonOrNull(request));
   if ("error" in approval) return fail(400, approval.error);
   const { from: payer, salt, signature, validBefore } = approval;
 

@@ -6,6 +6,7 @@
 // default view shows no address (NFR-6, UX review 032 M2). (2) "Pay with your wallet": the customer's own injected wallet
 // approves the same payment (lib/payer-wallet.ts), one message and no network fee. FR-PAY-7 still holds for the default
 // path: only the wallet option, marked data-pay-option="wallet", says "wallet".
+import { shortAddress } from "@/lib/format";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { Address } from "viem";
 import { Button, buttonClasses } from "@/components/Button";
@@ -97,7 +98,6 @@ export function useGuestFunds(fundsUrl: string | null, amountKey: string) {
   return { ...state, recheck: () => setRound((n) => n + 1) };
 }
 
-const shortAddress = (a: Address) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 /** The default path when this browser's guest is short, said before the hold: one line, then `children` (the wallet
  *  option, as the primary action), then funding this browser under a quiet disclosure. FR-PAY-7 words only here (the
@@ -116,6 +116,17 @@ export function GuestShort({ amountText, address, onRecheck, children }: { amoun
         </summary>
         <div className="grid gap-1 pt-1">
           <p className="text-ink-muted">Send test USDT to this browser&apos;s address, then check again.</p>
+          <p className="text-ink-muted">
+            No test USDT? Claim WBT at the{" "}
+            <a className="underline underline-offset-4 hover:text-ink" href="https://faucet.testnet.whitechain.io" target="_blank" rel="noreferrer">
+              Whitechain faucet
+            </a>
+            , then swap some to USDT on{" "}
+            <a className="underline underline-offset-4 hover:text-ink" href="https://testnet.yetitrade.fi" target="_blank" rel="noreferrer">
+              YetiTrade
+            </a>
+            .
+          </p>
           <div className="flex flex-wrap items-center gap-x-2">
             <span className="data" title={address}>
               {shortAddress(address)}

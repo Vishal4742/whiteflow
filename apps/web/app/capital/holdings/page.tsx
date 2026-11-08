@@ -4,7 +4,11 @@ import type { Metadata } from "next";
 import { EditorialHeader } from "@/components/gateway/Frame";
 import { InvestorApp } from "@/components/capital/investor/InvestorApp";
 
-export const metadata: Metadata = { title: "Your claims · Whiteflow" };
+export const metadata: Metadata = {
+  title: "Your claims",
+  description: "A claim is USDT a shop owes you. It shrinks as you're paid back, from the shop's sales or when its invoice is paid.",
+  alternates: { canonical: "/capital/holdings" },
+};
 
 export default function HoldingsPage() {
   return (

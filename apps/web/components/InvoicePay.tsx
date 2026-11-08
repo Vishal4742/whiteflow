@@ -17,6 +17,7 @@ import { FAILED, errorTone, outcome, type PayAnswer } from "@/lib/outcome";
 import type { AckEntry } from "@/lib/server/invoice-acks";
 import type { AckTermsText, InvoicePayTerms } from "@/lib/sign-sale";
 import { EXPLORER } from "@/lib/usdt";
+import { SuccessMark } from "@/components/ui/SuccessMark";
 
 export interface InvoicePayProps {
   invoiceId: string;
@@ -124,7 +125,7 @@ export function InvoicePay({ invoiceId, merchantName, verified, dueText, invoice
     <section className="relative grid w-full max-w-[420px] gap-5 rounded-[24px] bg-surface p-7 text-ink shadow-float border border-hairline" aria-live="polite">
       <div className="flex items-center justify-between border-b border-hairline pb-3">
         <WhiteflowWordmark className="text-xs" />
-        <span className="eyebrow text-xs text-ink-muted">Whitechain Sepolia</span>
+        <span className="eyebrow text-xs text-ink-muted">Whitechain testnet</span>
       </div>
       <div className="flex items-start justify-between gap-4">
         <div className="grid gap-1">
@@ -138,8 +139,8 @@ export function InvoicePay({ invoiceId, merchantName, verified, dueText, invoice
       <dl className="grid gap-2 border-y border-hairline py-4 text-sm">
         <Row term="Due">{dueText}</Row>
         <Row term="Invoice">{invoiceText} USDT</Row>
-        <Row term="Network">Whitechain Sepolia (Testnet)</Row>
-        <Row term="Network fee">0.00 WBT (Sponsored)</Row>
+        <Row term="Network">Whitechain testnet</Row>
+        <Row term="Network fee">Free, paid by Whiteflow</Row>
         {!paid && paidSoFarText && <Row term="Already paid">{paidSoFarText} USDT</Row>}
         {payable && <Row term="Payment fee">{feeText} USDT</Row>}
         {paid?.receiptId && (
@@ -167,7 +168,11 @@ export function InvoicePay({ invoiceId, merchantName, verified, dueText, invoice
         </p>
       ) : null}
       {paid ? (
-        <p className="text-sm text-ink-muted">This invoice is paid. {paid.receiptId ? "Keep the receipt link; it shows any refund too." : "There's nothing left to pay."}</p>
+        <div className="grid justify-items-center gap-2 text-center" role="status">
+          <SuccessMark />
+          <p className="title">Invoice paid</p>
+          <p className="text-sm text-ink-muted">{paid.receiptId ? "Keep the receipt link; it shows any refund too." : "There's nothing left to pay."}</p>
+        </div>
       ) : phase === "confirming" ? (
         <Confirming />
       ) : phase === "cancelled" ? (

@@ -152,7 +152,7 @@ Not built:
 - a remote, OAuth-based server (planned as SRS FR-MCP-6/7);
 - any rail other than USDT on Whitechain Testnet through the hosted checkout.
 
-Before production (tracked in `.batches/052-PW5-merchant-mcpb/production-plan.md`):
+Before production:
 - scoped, expiring, per-assistant credentials (Stage 2, on the Stage 3 workspace stack);
 - customer and invoice tables with revisions, approvals, numbering and an audit trail on the backend (Stage 3);
 - the Owner's authenticated review page, whose stand-in in the sandbox is the CLI;

@@ -9,6 +9,8 @@ import { BUSY, NOT_FUNDED, UNKNOWN, cooldownMessage } from "../relay.ts";
 import { plainUsdt, receiveTypes, usdtDomain } from "../usdt.ts";
 import { syncOffer } from "./capital-arkiv.ts";
 import { CAPITAL_MARKET, HOLDER_CAP, claimHolders, holderCapMessage, fundingNonce, isVerifiedInvestor, offerStatus, parseFundBody, quoteUnits, readOffer, type Deps, type FundBody } from "./capital.ts";
+import { claimPayment, releasePayment } from "../sessions.ts";
+import { DbUnavailable } from "./db.ts";
 import { HttpError, MIN_PAYMENT } from "./http.ts";
 
 const RELAY_TIMEOUT_MS = 35_000; // longer than the relayer's receipt wait, as in lib/relay.ts
@@ -16,6 +18,7 @@ const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const HASH = /^0x[0-9a-fA-F]{64}$/;
 // the relayer's own window (apps/relayer: validBefore at least 30 s and at most 15 min ahead; lib/pay.ts uses the same)
 const MIN_WINDOW_S = 30n;
+const NOT_OPEN = "This offer isn't open for funding any more.";
 const MAX_WINDOW_S = 15n * 60n;
 
 export type FundDeps = Deps & {
@@ -34,35 +37,60 @@ export async function fundOffer(raw: Record<string, unknown>, deps: FundDeps = {
   }
   const relayerUrl = deps.relayerUrl ?? payConfig()?.relayerUrl;
   if (!relayerUrl) throw new HttpError(503, "Funding isn't set up on this server.");
-  const [offer, verified] = await Promise.all([readOffer(f.claimId, deps), isVerifiedInvestor(f.investor, deps)]);
-  if (!offer) throw new HttpError(404, "There's no offer with that id.");
+  // the approval first, outside the claim's lock, so a request that is going to be refused never holds it (code review
+  // 2026-11-08, round 2): a verified investor, an open offer, the 1 USDT minimum, and the signature over this funding
+  const [listed, verified] = await Promise.all([readOffer(f.claimId, deps), isVerifiedInvestor(f.investor, deps)]);
+  if (!listed) throw new HttpError(404, "There's no offer with that id.");
   if (!verified) throw new HttpError(403, "This wallet isn't a verified investor yet, so it can't buy claims.");
-  if (offerStatus(offer) !== "open") throw new HttpError(409, "This offer isn't open for funding any more.");
-  // a payout pays every holder in one tx under the relayer's 400k gas: an advance takes 1 investor, an invoice 2
-  // (claude-contracts' fork table; ClaimToken itself allows 8). An existing holder may still add units.
-  const holders = await claimHolders(f.claimId, deps);
-  const holding = holders.some((h) => h.toLowerCase() === f.investor.toLowerCase());
-  if (holders.length >= HOLDER_CAP[offer.kind] && !holding) throw new HttpError(409, holderCapMessage(offer.kind));
-  const left = offer.face - offer.sold;
-  if (f.units > left) throw new HttpError(400, `Only ${left} units are left in this offer.`);
-  const value = await quoteUnits(f.claimId, f.units, deps);
+  if (offerStatus(listed) !== "open") throw new HttpError(409, NOT_OPEN);
+  if (f.units > listed.face - listed.sold) throw new HttpError(400, `Only ${listed.face - listed.sold} units are left in this offer.`);
+  const value = await quoteUnits(f.claimId, f.units, deps); // the offer's price and face: fixed, so this read can't go stale
   // no relay fee on funding, so the relayer refuses less than 1 USDT: say so instead of "approval didn't work"
   if (value < MIN_PAYMENT) throw new HttpError(400, "The minimum funding is 1.00 USDT.");
-  // human 12:2x (security 026 M1): a new investor taking the claim's last free slot buys everything left, so a small
-  // slice can't lock an advance (or an invoice) against every other investor until it repays
-  if (!holding && holders.length === HOLDER_CAP[offer.kind] - 1 && f.units !== left) {
-    throw new HttpError(400, `You're the last investor this ${offer.kind} can take: buy all ${left} remaining units.`);
-  }
-  // UX review #33 M1: a part buy must leave a remainder that still costs the minimum, or the next investor (who must
-  // buy everything left) is refused and the claim can never fill
-  const minLeft = ((MIN_PAYMENT - 1n) * offer.face) / offer.price + 1n; // smallest units with quote >= MIN_PAYMENT
-  if (f.units < left && left - f.units < minLeft) {
-    throw new HttpError(400, `Buy all ${plainUsdt(left)} USDT, or leave at least ${plainUsdt(minLeft)} USDT for the next investor.`);
-  }
   const message = { from: f.investor, to: CAPITAL_MARKET, value, validAfter: 0n, validBefore: f.validBefore, nonce: fundingNonce(f.claimId, f.investor, f.units, f.salt) };
   const valid = await verifyTypedData({ address: f.investor, domain: usdtDomain, types: receiveTypes, primaryType: "ReceiveWithAuthorization", message, signature: f.sig }).catch(() => false);
   if (!valid) throw new HttpError(400, "That approval doesn't match this funding. Nothing was charged; please sign again.");
-  const tx = await relayFunding(f, relayerUrl, deps);
+  // code review 2026-11-08 F5: what other fundings change (holders, units sold) is read and relayed under one lock per
+  // claim, so two buys sent in the same few seconds can't both pass the holder cap or the remainder rule. With no
+  // database configured (tests, a local run without Postgres) there is nothing to lock with; production always has one.
+  const lockKey = `fund:${f.claimId}`;
+  const lock = await claimPayment(lockKey).catch((error: unknown) => {
+    if (error instanceof DbUnavailable) return undefined;
+    console.error(`capital: funding lock for claim ${f.claimId} not taken (${error instanceof Error ? error.name : "error"})`);
+    throw new HttpError(503, BUSY); // nothing was relayed
+  });
+  if (lock === null) throw new HttpError(409, "Another investor is buying into this offer right now. Try again in a moment.");
+  let keepLock = false;
+  let tx: Awaited<ReturnType<typeof relayFunding>>;
+  try {
+    const offer = await readOffer(f.claimId, deps); // fresh: units sold may have moved while this request waited
+    if (!offer || offerStatus(offer) !== "open") throw new HttpError(409, NOT_OPEN);
+    // a payout pays every holder in one tx under the relayer's 400k gas: an advance takes 1 investor, an invoice 2
+    // (claude-contracts' fork table; ClaimToken itself allows 8). An existing holder may still add units.
+    const holders = await claimHolders(f.claimId, deps);
+    const holding = holders.some((h) => h.toLowerCase() === f.investor.toLowerCase());
+    if (holders.length >= HOLDER_CAP[offer.kind] && !holding) throw new HttpError(409, holderCapMessage(offer.kind));
+    const left = offer.face - offer.sold;
+    if (f.units > left) throw new HttpError(400, `Only ${left} units are left in this offer.`);
+    // human 12:2x (security 026 M1): a new investor taking the claim's last free slot buys everything left, so a small
+    // slice can't lock an advance (or an invoice) against every other investor until it repays
+    if (!holding && holders.length === HOLDER_CAP[offer.kind] - 1 && f.units !== left) {
+      throw new HttpError(400, `You're the last investor this ${offer.kind} can take: buy all ${left} remaining units.`);
+    }
+    // UX review #33 M1: a part buy must leave a remainder that still costs the minimum, or the next investor (who must
+    // buy everything left) is refused and the claim can never fill
+    const minLeft = ((MIN_PAYMENT - 1n) * offer.face) / offer.price + 1n; // smallest units with quote >= MIN_PAYMENT
+    if (f.units < left && left - f.units < minLeft) {
+      throw new HttpError(400, `Buy all ${plainUsdt(left)} USDT, or leave at least ${plainUsdt(minLeft)} USDT for the next investor.`);
+    }
+    tx = await relayFunding(f, relayerUrl, deps).catch((error: unknown) => {
+      // an unknown outcome may still mint: keep the lock until it lapses (LOCK_S), by when the chain shows the new holder
+      if (error instanceof HttpError && error.status === 504) keepLock = true;
+      throw error;
+    });
+  } finally {
+    if (lock && !keepLock) await releasePayment(lockKey, lock);
+  }
   (deps.schedule ?? after)(async () => {
     try {
       const fresh = await readOffer(f.claimId, deps);
@@ -91,7 +119,7 @@ async function relayFunding(f: FundBody, relayerUrl: string, deps: FundDeps) {
     throw new HttpError(504, UNKNOWN); // a timeout or a dropped connection: the relayer may have sent it
   }
   const data = (await res.json().catch(() => ({}))) as { txHash?: string; blockNumber?: string | number; code?: string; retry_after_s?: unknown };
-  if (res.status === 429 && data.code === "payer_cooldown") throw new HttpError(429, cooldownMessage(data.retry_after_s)); // batch 031 A10
+  if (res.status === 429 && data.code === "payer_cooldown") throw new HttpError(429, cooldownMessage(data.retry_after_s), Number(data.retry_after_s) > 0 ? Math.ceil(Number(data.retry_after_s)) : undefined); // batch 031 A10
   if (res.ok && typeof data.txHash === "string" && HASH.test(data.txHash)) {
     return { tx_hash: data.txHash as Hex, block_number: data.blockNumber === undefined ? null : String(data.blockNumber) };
   }

@@ -69,7 +69,7 @@ const NEEDS = [
   },
   {
     label: "Test USDT for payers",
-    text: "Paying needs test USDT on Whitechain testnet. The team funds the demo's own wallets and there's no public USDT faucet, so ask the team for test USDT during the hackathon.",
+    text: "Paying needs test USDT on Whitechain testnet. Claim free WBT at faucet.testnet.whitechain.io, then swap some to USDT on testnet.yetitrade.fi.",
   },
 ];
 
@@ -139,7 +139,7 @@ export function Quickstart(props: Numbered) {
             </div>
             <div className="grid min-w-0 content-start gap-3">
               {step.code && <MiniCode code={step.code} />}
-              {i === 0 && <Snippet code={code.CURL} name="the curl requests" file="Or with curl" />}
+              {i === 0 && <Snippet code={code.CURL} name="the quick-start curl requests" file="Or with curl" />}
               {!step.code && <CheckPaid />}
             </div>
           </li>

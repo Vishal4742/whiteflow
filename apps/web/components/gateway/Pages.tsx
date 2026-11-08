@@ -11,6 +11,7 @@ import { PageSheet, rangeText } from "@/components/gateway/Hosted";
 import { LinkPill, QrActions, WebhookId } from "@/components/gateway/Share";
 import { PRICE_CURRENCIES, errorText, gatewayClient, type Currency, type Page } from "@/lib/gateway-client";
 import { amountText, pageBody, type PageForm } from "@/lib/gateway-forms";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const MAX_ITEMS = 20;
 const START: PageForm = {
@@ -35,7 +36,7 @@ export function PagesScreen({ pages, origin, merchantName, merchantVerified }: {
       <section aria-labelledby="your-pages" className="grid gap-4">
         <SectionLabel id="your-pages">Your pages · {pages.length}</SectionLabel>
         {pages.length === 0 ? (
-          <p className="text-sm text-ink-muted">No pages yet. Build one above and share its address; customers pay on a page that shows your name and items.</p>
+          <EmptyState title="No payment pages yet" description="Build one above and share its address; customers pay on a page that shows your name and items." />
         ) : (
           <ul className="grid items-start gap-4 md:grid-cols-2 2xl:grid-cols-3">
             {pages.map((page) => (
@@ -149,13 +150,13 @@ function NewPage({ origin, merchantName, merchantVerified }: { origin: string; m
                     <span className="text-ink-muted">Price</span>
                     <input value={item.price} onChange={(e) => setItem(i, { price: e.target.value })} inputMode="decimal" autoComplete="off" placeholder="5.00" className={`${field} text-right tabular-nums`} />
                   </label>
-                  <Button variant="quiet" aria-label={`Remove item ${i + 1}`} aria-disabled={form.items.length === 1} onClick={() => set({ items: form.items.filter((_, j) => j !== i) })}>
+                  <Button size="md" variant="quiet" aria-label={`Remove item ${i + 1}`} aria-disabled={form.items.length === 1} onClick={() => set({ items: form.items.filter((_, j) => j !== i) })}>
                     Remove
                   </Button>
                 </div>
               ))}
               {form.items.length < MAX_ITEMS && (
-                <Button variant="quiet" className="justify-self-start" onClick={() => set({ items: [...form.items, { name: "", price: "" }] })}>
+                <Button size="md" variant="quiet" className="justify-self-start" onClick={() => set({ items: [...form.items, { name: "", price: "" }] })}>
                   Add an item
                 </Button>
               )}
@@ -173,7 +174,7 @@ function NewPage({ origin, merchantName, merchantVerified }: { origin: string; m
             </>
           )}
           <div className="grid gap-2 sm:col-span-2">
-            <Button type="submit" className="justify-self-start" aria-disabled={busy}>
+            <Button size="md" type="submit" className="justify-self-start" aria-disabled={busy}>
               {busy ? "Creating…" : "Create page"}
             </Button>
             <p className="text-xs text-ink-muted">Your colour is an accent on the page; text stays in our colours so it is always easy to read.</p>
@@ -192,7 +193,7 @@ function NewPage({ origin, merchantName, merchantVerified }: { origin: string; m
         </figure>
       </div>
       {created && (
-        <div role="status" className="grid gap-3 rounded-[16px] border border-hairline bg-accent-soft p-4 text-sm">
+        <div role="status" className="grid gap-3 rounded-card border border-hairline bg-accent-soft p-4 text-sm">
           <p>Your page is live. Share it, or show its QR code at the counter.</p>
           <LinkPill url={`${origin}/p/${created.slug}`} name="the new page" />
           <QrActions kind="p" id={created.slug} name={created.title} />

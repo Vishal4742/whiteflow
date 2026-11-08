@@ -24,13 +24,13 @@ export function SettlementsView({ data, fees = new Map() }: { data: Settlements;
     <>
       <section
         aria-labelledby="t0"
-        className={`grid content-start gap-4 rounded-[20px] border border-hairline p-5 text-[#ededf3] md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-x-8 md:p-6 ${nightGrain}`}
+        className={`grid content-start gap-4 rounded-[20px] border border-hairline p-5 text-glass-ink md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-x-8 md:p-6 ${nightGrain}`}
       >
-        <h2 id="t0" className="eyebrow text-[#a7abc2] md:col-span-2">
+        <h2 id="t0" className="eyebrow text-glass-ink/70 md:col-span-2">
           Settlement
         </h2>
-        <b className="text-[36px] leading-none font-medium tracking-[-0.03em] md:text-[44px]">T+0</b>
-        <p className="text-sm text-[#c9cbe0]">Each payment settles to your wallet in the same transaction, the moment it&apos;s paid.</p>
+        <b className="text-[36px] leading-none font-medium tracking-[-0.03em] md:text-[44px]">Instant</b>
+        <p className="text-sm text-glass-ink/80">Each payment settles to your wallet in the same transaction, the moment it&apos;s paid.</p>
       </section>
 
       <section aria-labelledby="settled" className={panel}>

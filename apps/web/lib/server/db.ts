@@ -29,16 +29,21 @@ export function setTestDb(db: Db | undefined): void {
   current = db;
 }
 
+const QUERY_TIMEOUT_MS = 10_000; // a Neon compute resume takes a few seconds; anything slower is a stall
+
 function db(): Db {
   if (current) return current;
   const url = process.env.DATABASE_URL;
   if (!url) throw new DbUnavailable();
   const sql = neon(url);
+  // code review 2026-11-08 F6: a stalled database must fail in seconds, not hang a pay route to its 300 s limit after
+  // the relayer has already sent the payment (the sheet then shows "confirming" from handle()'s 500, never a hang)
+  const deadline = () => ({ fetchOptions: { signal: AbortSignal.timeout(QUERY_TIMEOUT_MS) } });
   current = {
-    query: (text, params = []) => sql.query(text, params) as Promise<Row[]>,
+    query: (text, params = []) => sql.query(text, params, deadline()) as Promise<Row[]>,
     // pinned, not left to the server default: the voucher hold count relies on a fresh snapshot per statement (R2-L1)
     transaction: (statements) =>
-      sql.transaction((txn) => statements.map((s) => txn.query(s.text, s.params ?? [])), { isolationLevel: "ReadCommitted" }) as Promise<Row[][]>,
+      sql.transaction((txn) => statements.map((s) => txn.query(s.text, s.params ?? [])), { isolationLevel: "ReadCommitted", ...deadline() }) as Promise<Row[][]>,
   };
   return current;
 }

@@ -1,6 +1,7 @@
 // The hosted link and page sheets (FR-GW-1, FR-GW-2) over the night scene, in the checkout's own sheet style. Plain
 // HTML forms that post to our server (no JS needed), which answers 303 to the checkout. No hooks: /l and /p render
 // them on the server, and the dashboard renders the page sheet as its live preview. Plain words only (FR-PAY-7).
+import { formatDateTime } from "@/lib/format";
 import { LiveTotal } from "@/components/gateway/LiveTotal";
 import type { ReactNode } from "react";
 import { buttonClasses } from "@/components/Button";
@@ -8,7 +9,7 @@ import { MerchantName } from "@/components/MerchantName";
 import type { Currency, OpenAmount, PublicLink } from "@/lib/gateway-client";
 import { amountText } from "@/lib/gateway-forms";
 
-const sheet = "relative grid w-full max-w-[440px] gap-5 overflow-hidden rounded-[28px] bg-surface p-7 text-ink shadow-float";
+const sheet = "relative grid w-full max-w-[440px] gap-5 overflow-hidden rounded-sheet bg-surface p-7 text-ink shadow-float";
 const input = "h-12 rounded-sm border border-hairline bg-surface px-3 text-ink tabular-nums";
 
 function Note({ currency }: { currency: Currency }) {
@@ -52,7 +53,7 @@ export function LinkSummary({ link }: { link: PublicLink }) {
         </span>
       )}
       {link.paid_at && Number.isFinite(Date.parse(link.paid_at)) && (
-        <span className="text-sm text-ink-muted">Paid on {new Date(link.paid_at).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" })} IST</span>
+        <span className="text-sm text-ink-muted">Paid on {formatDateTime(link.paid_at)}</span>
       )}
     </p>
   );

@@ -163,7 +163,7 @@ function OfferRow({ offer: o, state, connect, me, open, toggle, retry }: RowProp
         <span className="flex items-center gap-1 text-xs text-ink-muted">
           {o.arkiv.entity_key ? (
             <>
-              Arkiv entity <span className="data">{short(o.arkiv.entity_key)}</span>
+              Public record on Arkiv <span className="data">{short(o.arkiv.entity_key)}</span>
               <CopyButton text={o.arkiv.entity_key} name={`the Arkiv entity key of offer ${o.id}`} />
             </>
           ) : (

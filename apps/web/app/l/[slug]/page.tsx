@@ -12,12 +12,14 @@ import { SLUG, type PublicLink } from "@/lib/gateway-client";
 import { checkoutMessage, closedLinkCopy } from "@/lib/gateway-forms";
 import { logFailure, publicLink } from "@/lib/gateway-server";
 
+export const metadata = { title: "Payment link", robots: { index: false } };
+
 // The night and the frame prerender; the link streams in (Cache Components needs params inside Suspense).
 export default function LinkPage({ params, searchParams }: PageProps<"/l/[slug]">) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12">
+    <main id="main" className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12">
       <StaticScene />
-      <Suspense fallback={<p className="relative rounded-[28px] bg-surface px-8 py-6 text-ink-muted shadow-float">Opening the payment link…</p>}>
+      <Suspense fallback={<p className="relative rounded-sheet bg-surface px-8 py-6 text-ink-muted shadow-float">Opening the payment link…</p>}>
         <LinkLoader params={params} searchParams={searchParams} />
       </Suspense>
     </main>

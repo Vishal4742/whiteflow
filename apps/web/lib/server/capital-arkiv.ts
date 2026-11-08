@@ -84,6 +84,8 @@ export interface OfferStore {
 export type CapitalDeps = Deps & { arkiv?: OfferStore };
 
 const MAX_ROWS = 1000;
+/** The Arkiv node returns at most 100 entities per query ("limit 1000 exceeds the node maximum of 100"): page by offset. */
+const PAGE = 100;
 
 function sdkValues(t: OfferTerms) {
   return {
@@ -99,8 +101,13 @@ function sdkStore(): OfferStore {
   const { reader, writer, address } = arkivClients();
   return {
     async rows() {
-      const res = await reader.select().from(OfferEntity).where(eq("market", addr(CAPITAL_MARKET))).ownedBy(address).createdBy(address).limit(MAX_ROWS).fetch();
-      return res.entities.map((e) => {
+      const entities = [];
+      for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+        const res = await reader.select().from(OfferEntity).where(eq("market", addr(CAPITAL_MARKET))).ownedBy(address).createdBy(address).limit(PAGE).offset(offset).fetch();
+        entities.push(...res.entities);
+        if (res.entities.length < PAGE) break;
+      }
+      return entities.map((e) => {
         const cells = e as unknown as Record<string, { value?: unknown } | undefined> & { $key: Hex };
         const terms = Object.fromEntries(Object.keys(COLUMN_KINDS).map((c) => [c, String(cells[c]?.value ?? "").toLowerCase()]));
         return { entityKey: cells.$key, terms: terms as Partial<OfferTerms> };

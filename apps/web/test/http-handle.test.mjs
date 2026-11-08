@@ -56,3 +56,26 @@ test("handle: anything else is a 500 that names no internals, logged by name onl
   assert.deepEqual(await res.json(), { error: "Something went wrong on our side. Try again." });
   assert.deepEqual(logged, [["gateway api error:", "TypeError"]]);
 });
+
+test("readText: a body over the cap is a 413, refused by its Content-Length before it's read (security audit L5)", async () => {
+  const { readText } = await import("../lib/server/http.ts");
+  const is413 = (e) => e instanceof HttpError && e.status === 413;
+  const declared = new Request("http://x.test/", { method: "POST", headers: { "content-length": "20000" }, body: "{}" });
+  await assert.rejects(readText(declared), is413);
+  assert.equal(declared.bodyUsed, false, "refused before reading");
+  await assert.rejects(readText(new Request("http://x.test/", { method: "POST", body: "x".repeat(20_000) })), is413);
+  assert.equal(await readText(new Request("http://x.test/", { method: "POST", body: '{"a":1}' })), '{"a":1}');
+});
+
+test("a 429 says when to retry: Retry-After is the seconds left in the window", async () => {
+  const { rateLimit, resetRateLimits } = await import("../lib/server/http.ts");
+  resetRateLimits();
+  const res = await handle(async () => {
+    rateLimit("retry-after-test", 1, 60_000, 0);
+    rateLimit("retry-after-test", 1, 60_000, 1_000);
+    return new Response("not limited");
+  });
+  assert.equal(res.status, 429);
+  assert.equal(res.headers.get("retry-after"), "59");
+  assert.equal((await handle(async () => { throw new HttpError(400, "bad"); })).headers.get("retry-after"), null, "only a 429 carries it");
+});

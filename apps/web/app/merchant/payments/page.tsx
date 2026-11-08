@@ -1,6 +1,7 @@
 // Payments (FR-PAY-8, FR-GW-5's list for the dashboard): every payment to the signed-in wallet, with its receipt, its
 // transaction and a refund. The same sources as GET /api/v1/payments (the Paid log index for ids, payments(id) on chain
 // for amounts and what is left to refund), read on our server for the signed-in wallet.
+import { formatDateTime } from "@/lib/format";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Account, EditorialHeader, SignedOut, card } from "@/components/gateway/Frame";
@@ -18,6 +19,8 @@ import { cachedTxFee } from "@/lib/server/tx-fee";
 import { listPayments } from "@/lib/sessions";
 import { EXPLORER, formatUsdt } from "@/lib/usdt";
 
+export const metadata = { title: "Payments" };
+
 const header = (
   <EditorialHeader
     label="Payments"
@@ -27,7 +30,7 @@ const header = (
   </EditorialHeader>
 );
 
-const when = (ms: number) => new Date(ms).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+const when = (ms: number) => formatDateTime(ms);
 const cellLink = "inline-flex min-h-10 items-center text-sm font-medium text-accent underline underline-offset-4 hover:text-accent-hover";
 const FEE_ROWS = 50;
 
@@ -109,15 +112,15 @@ async function Payments() {
             subtext="Confirmed on Whitechain"
           />
           <MetricCard
-            label="Covered gas"
+            label="Network fees covered"
             value={known.length > 0 ? `${formatWbt(covered)}` : "0.0000"}
             unit="WBT"
-            subtext="Sponsored via relayer"
+            subtext="Paid by Whiteflow, not you"
           />
           <MetricCard
-            label="Settlement Rail"
-            value="T+0"
-            subtext="Direct to receiving wallet"
+            label="Settlement"
+            value="Instant"
+            subtext="Straight to your wallet"
           />
         </section>
 

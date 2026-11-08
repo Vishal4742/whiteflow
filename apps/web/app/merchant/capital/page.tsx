@@ -2,6 +2,7 @@
 // invoice sold early (FR-INV-1, 2) and the merchant's live offers (FR-ARK-1, 2). Behind sign-in, in the dashboard Shell.
 // Our server reads what GET /api/v1/capital/merchant reads (merchantAdvance + the offer book), directly, never over
 // HTTP to ourselves (lib/gateway-server.ts); the listing txs go from the merchant's own wallet in the browser.
+import { formatDate, formatDateTime } from "@/lib/format";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import type { Address } from "viem";
@@ -18,6 +19,8 @@ import { merchantInvoices } from "@/lib/onchain";
 import { merchantAdvance } from "@/lib/server/capital";
 import { offerBook } from "@/lib/server/capital-arkiv";
 
+export const metadata = { title: "Capital" };
+
 const header = (
   <EditorialHeader label="Capital" lede="Get cash now from investors: an advance you repay from a share of each sale, or an open invoice sold for a little less than it's worth.">
     Get paid <span className="emphasis">before you&apos;re paid.</span>
@@ -26,8 +29,8 @@ const header = (
 
 const one = (v: string | string[] | undefined) => (typeof v === "string" && /^\d{1,20}$/.test(v) ? v : null);
 const nowSeconds = () => Math.floor(Date.now() / 1000);
-const istTime = (ms: number) => new Date(ms).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", hour12: false, timeZone: "Asia/Kolkata" });
-const istDay = (ms: number) => new Date(ms).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" });
+const istTime = (ms: number) => formatDateTime(ms);
+const istDay = (ms: number) => formatDate(ms);
 
 export default function CapitalPage({ searchParams }: PageProps<"/merchant/capital">) {
   return (

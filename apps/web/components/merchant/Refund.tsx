@@ -39,7 +39,7 @@ export function Refund({ merchant, merchantPay, paymentId, refundable }: RefundP
 
   if (!open) {
     return (
-      <Button
+      <Button size="md"
         variant="quiet"
         onClick={() => {
           // always start from what is left now, never a figure typed for an earlier refund (tester R1 #2)
@@ -88,7 +88,7 @@ export function Refund({ merchant, merchantPay, paymentId, refundable }: RefundP
         <p role="status" className="text-sm text-ink">
           Refunded. The webhook to your server didn&apos;t go out yet.
         </p>
-        <Button variant="quiet" onClick={done}>
+        <Button size="md" variant="quiet" onClick={done}>
           Close
         </Button>
       </div>
@@ -114,10 +114,10 @@ export function Refund({ merchant, merchantPay, paymentId, refundable }: RefundP
           aria-describedby={`${inputId}-hint`}
           className="h-12 w-full rounded-sm border border-hairline bg-surface px-3 tabular-nums text-ink sm:w-28 sm:text-right"
         />
-        <Button type="submit" aria-disabled={busy}>
+        <Button size="md" type="submit" aria-disabled={busy}>
           {busy ? step : "Refund"}
         </Button>
-        <Button variant="quiet" onClick={() => setOpen(false)} aria-disabled={busy}>
+        <Button size="md" variant="quiet" onClick={() => setOpen(false)} aria-disabled={busy}>
           Close
         </Button>
       </div>

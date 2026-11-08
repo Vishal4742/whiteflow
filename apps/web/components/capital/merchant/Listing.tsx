@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { Address } from "viem";
 import { Button } from "@/components/Button";
 import { CopyButton } from "@/components/CopyButton";
+import { shortAddress as short } from "@/lib/format";
 import { EXPLORER } from "@/lib/usdt";
 import { settlePublish, startPublish } from "./publishing";
 import { publishOffer } from "./terms";
@@ -21,7 +22,7 @@ export type ListingState =
   | { phase: "unconfirmed" }
   | { phase: "error"; message: string };
 
-export const short = (hex: string) => `${hex.slice(0, 6)}…${hex.slice(-4)}`;
+export { short };
 export const busy = (s: ListingState) => s.phase === "wallet" || s.phase === "publishing";
 
 /** Runs one listing; the state survives the refresh that swaps the form for the running offer. */
@@ -141,15 +142,15 @@ export function CancelOffer({ merchant, claimId }: { merchant: Address; claimId:
       {confirming ? (
         <span role="group" aria-label={`Cancel offer ${claimId}?`} className="flex flex-wrap items-center gap-x-2 text-sm">
           <span className="whitespace-nowrap">Cancel offer?</span>
-          <Button variant="quiet" className="whitespace-nowrap" onClick={cancel} aria-disabled={working}>
+          <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={cancel} aria-disabled={working}>
             {working ? "Cancelling…" : "Yes, cancel"}
           </Button>
-          <Button variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={working}>
+          <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={working}>
             Keep it
           </Button>
         </span>
       ) : (
-        <Button variant="quiet" className="text-sm" onClick={() => setConfirming(true)}>
+        <Button size="md" variant="quiet" className="text-sm" onClick={() => setConfirming(true)}>
           Cancel
         </Button>
       )}

@@ -13,6 +13,8 @@ import { qrTarget, type QrKind } from "@/lib/qr";
 import { isShopInvoice } from "@/lib/settle";
 import { formatUsdt } from "@/lib/usdt";
 
+export const metadata = { title: "Show at the counter", robots: { index: false } };
+
 const READ_TRIES = 2;
 const doneLink = "inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-4"; // not from Frame: that pulls sign-in code into this page
 const DONE: Record<QrKind, string> = { l: "/merchant/links", p: "/merchant/pages", pay: "/merchant#invoices" };
@@ -23,11 +25,12 @@ interface View {
   amount: string | null;
   hint: string;
   closed: string | null; // why it can't be paid now, instead of the code
+  paid?: boolean; // closed because it was paid: shown as success, not as a warning
 }
 
 export default function CounterPage({ params }: PageProps<"/counter/[kind]/[id]">) {
   return (
-    <main className="grid min-h-[calc(100dvh-28px)] place-items-center bg-surface px-4 py-8 text-ink">
+    <main id="main" className="grid min-h-[calc(100dvh-28px)] place-items-center bg-surface px-4 py-8 text-ink">
       <Suspense fallback={<p className="text-ink-muted">Getting the code ready…</p>}>
         <Counter params={params} />
       </Suspense>
@@ -40,7 +43,7 @@ async function viewOf(kind: QrKind, id: string): Promise<View | null> {
     const link = await publicLink(id);
     if (!link) notFound();
     const closed = link.status === "active" ? null : closedLinkCopy(link.status, link.merchant_name).title;
-    return { merchant: link.merchant_name, title: link.description, amount: link.amount && `${amountText(link.amount)} ${link.currency}`, hint: link.amount ? "Scan to pay" : "Scan, then enter the amount", closed };
+    return { merchant: link.merchant_name, title: link.description, amount: link.amount && `${amountText(link.amount)} ${link.currency}`, hint: link.amount ? "Scan to pay" : "Scan, then enter the amount", closed, paid: link.status === "paid" };
   }
   if (kind === "p") {
     const page = await publicPage(id);
@@ -53,7 +56,7 @@ async function viewOf(kind: QrKind, id: string): Promise<View | null> {
   if (!isShopInvoice(invoice, shop.merchant)) notFound(); // /pay serves the shop's own invoices only
   const closed = invoice.status === "paid" ? "This invoice is paid" : invoice.status === "cancelled" ? "This invoice was cancelled" : null;
   // what the customer pays: what is left plus the payment fee, as on the invoice page
-  return { merchant: shop.merchantName, title: `Invoice ${id}`, amount: `${formatUsdt(invoice.amount - invoice.paid + fee)} USDT`, hint: "Scan to pay", closed };
+  return { merchant: shop.merchantName, title: `Invoice ${id}`, amount: `${formatUsdt(invoice.amount - invoice.paid + fee)} USDT`, hint: "Scan to pay", closed, paid: invoice.status === "paid" };
 }
 
 async function Counter({ params }: Pick<PageProps<"/counter/[kind]/[id]">, "params">) {
@@ -87,7 +90,7 @@ async function Counter({ params }: Pick<PageProps<"/counter/[kind]/[id]">, "para
       <span className="eyebrow text-ink-muted">{view.merchant}</span>
       <h1 className="text-[28px] leading-tight font-medium tracking-[-0.03em] break-words md:text-[40px]">{view.title}</h1>
       {view.closed ? (
-        <p role="status" className="title text-warning">
+        <p role="status" className={`title ${view.paid ? "text-positive" : "text-warning"}`}>
           {view.closed}
         </p>
       ) : (

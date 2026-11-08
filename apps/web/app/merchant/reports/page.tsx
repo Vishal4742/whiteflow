@@ -11,6 +11,8 @@ import { reportRange } from "@/lib/gateway-money";
 import { merchantReport, readFailure } from "@/lib/gateway-server";
 import { currentMerchant } from "@/lib/merchant-session";
 
+export const metadata = { title: "Reports" };
+
 const header = (
   <EditorialHeader label="Reports" lede="Gross, fees, net and refunds for up to 92 days at a time, read from each payment's transaction. Download the same payments as a CSV for your accountant.">
     What came in, <span className="emphasis">day by day.</span>

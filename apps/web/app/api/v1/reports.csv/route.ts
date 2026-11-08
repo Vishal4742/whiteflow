@@ -1,12 +1,13 @@
 // GET /api/v1/reports.csv?from=YYYY-MM-DD&to=YYYY-MM-DD → the report's payments, one CSV row each (SRS FR-GW-9).
 // Batch 051 R2-1 payments:read (any member of the workspace that linked the merchant wallet).
-import { handle } from "../../../../lib/server/http.ts";
+import { handle, sharedRateLimit } from "../../../../lib/server/http.ts";
 import { legacyAccess } from "../../../../lib/server/legacy.ts";
 import { merchantHistory, merchantPayAddress, rangeOf, reportCsv } from "../../../../lib/server/reports.ts";
 
 export async function GET(request: Request) {
   return handle(async () => {
     const { merchant } = await legacyAccess(request, "payments:read");
+    await sharedRateLimit(`reports:${merchant.toLowerCase()}`, 30, 60_000, "memory"); // the same Blockscout pages and budget as /reports
     const range = rangeOf(request);
     const csv = reportCsv(await merchantHistory(merchantPayAddress(), merchant), range);
     return new Response(csv, {

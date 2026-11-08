@@ -234,13 +234,19 @@ const EXPECTED = {
   "app/api/v1/capital/transfer-check/route.ts": [["memory", "60", "60_000"]],
   "app/api/v1/invoices/[id]/acknowledge/route.ts": [["closed", "ACKS_PER_MINUTE", "60_000"]], // main's 047 debtor ack: a DB write
   "app/api/v1/invoices/[id]/funds/route.ts": [["memory", "CHECKS_PER_MINUTE", "60_000"]], // batch 049: main's 032-P5 balance checks
+  "app/api/v1/invoices/[id]/pay/route.ts": [["memory", "20", "60_000"]], // code review 2026-11-08 F3: chain reads before the signature check
+  "app/api/v1/payments/route.ts": [["memory", "30", "60_000"]], // F3: Blockscout + up to 100 chain reads a call
   "app/api/v1/links/route.ts": [["closed", "LINKS_PER_MINUTE", "60_000"]], // main's 054 secret-key links: a write
   "app/api/v1/payments/[id]/refunds/sync/route.ts": [["closed", "SYNCS_PER_MINUTE", "60_000"]],
   "app/api/v1/quotes/route.ts": [["closed", "30", "60_000"]],
   "app/api/v1/reports/route.ts": [["memory", "30", "60_000"]], // main's 054 review M1: a read, Blockscout not the DB
+  "app/api/v1/reports.csv/route.ts": [["memory", "30", "60_000"]], // F3: the same Blockscout pages as /reports
   "app/api/v1/sessions/route.ts": [["closed", "SESSIONS_PER_MINUTE", "60_000"]],
   "app/api/v1/sessions/[id]/funds/route.ts": [["memory", "CHECKS_PER_MINUTE", "60_000"]],
-  "app/api/v1/sessions/[id]/voucher/route.ts": [["closed", "CHANGES_PER_MINUTE", "60_000"]],
+  "app/api/v1/sessions/[id]/pay/route.ts": [["memory", "20", "60_000"], ["memory", "10", "60_000"]], // F2: per IP, then per checkout
+  "app/api/v1/sessions/[id]/route.ts": [["memory", "60", "60_000"], ["memory", "600", "60_000"]], // F3: per checkout, then the merchant's ceiling
+  "app/api/v1/sessions/[id]/voucher/route.ts": [["closed", "CHANGES_PER_MINUTE", "60_000"], ["closed", "MERCHANT_MISSES_PER_MINUTE", "60_000"]], // F4: per IP and merchant; misses per merchant
+  "app/api/v1/settlements/route.ts": [["memory", "30", "60_000"]], // F3: 2-20 Blockscout pages a call
   "app/api/v1/vouchers/route.ts": [["closed", "30", "60 * 60_000"]],
   "app/api/v1/vouchers/[id]/publish/route.ts": [["closed", "30", "60 * 60_000"]],
   "app/api/v1/webhooks/deliveries/[id]/replay/route.ts": [["closed", "20", "60_000"]],

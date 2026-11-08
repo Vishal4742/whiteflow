@@ -22,7 +22,7 @@ const SECTIONS = [
     title: "Collections",
     items: [
       { key: "links", label: "Payment links", href: "/merchant/links" },
-      { key: "pages", label: "Hosted pages", href: "/merchant/pages" },
+      { key: "pages", label: "Payment pages", href: "/merchant/pages" },
       { key: "vouchers", label: "Vouchers", href: "/merchant/vouchers" },
     ],
   },
@@ -31,7 +31,7 @@ const SECTIONS = [
     items: [
       { key: "reports", label: "Reports", href: "/merchant/reports" },
       { key: "settlements", label: "Settlements", href: "/merchant/settlements" },
-      { key: "capital", label: "Capital (legacy)", href: "/merchant/capital" },
+      { key: "capital", label: "Capital", href: "/merchant/capital" },
     ],
   },
   {
@@ -84,7 +84,7 @@ function NavIcon({ name }: { name: string }) {
   }
 }
 
-const row = "flex min-h-9 items-center justify-between gap-2.5 rounded-[8px] px-2.5 text-sm transition-colors";
+const row = "flex min-h-9 items-center justify-between gap-2.5 rounded-field px-2.5 text-sm transition-colors";
 
 const hrefOf = (key: NavKey) => SECTIONS.flatMap((section): readonly { key: NavKey; href: string }[] => section.items).find((item) => item.key === key)?.href ?? "";
 
@@ -99,10 +99,10 @@ function List({ active }: { active: NavKey }) {
           </li>
           {section.items.map((item) => {
             const isCurrent = item.key === active;
-            const className = `${row} ${isCurrent ? "bg-accent-soft font-medium text-accent dark:bg-accent/15" : "text-ink hover:bg-surface-sunk"}`;
+            const className = `${row} ${isCurrent ? "bg-accent-soft font-medium text-accent" : "text-ink hover:bg-surface-sunk"}`;
             const label = (
               <span className="flex min-w-0 items-center gap-2">
-                {"icon" in item && item.icon && <NavIcon name={item.icon} />}
+                {"icon" in item && item.icon ? <NavIcon name={item.icon} /> : <span className="h-4 w-4 shrink-0" aria-hidden="true" />}
                 <span className="truncate">{item.label}</span>
               </span>
             );

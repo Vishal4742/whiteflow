@@ -12,6 +12,7 @@
   --on-accent: #ffffff;
   --scene-night: #12131c;
   --scene-dot: #1723e2;
+  --accent-night: #8796ff; /* the accent on always-dark scenes (landing, proofs): 6.9:1 on scene-night */
   --glass-fill: rgba(176, 182, 220, 0.18);
   --glass-edge: rgba(176, 182, 220, 0.34);
   --glass-ink: #ededf3;

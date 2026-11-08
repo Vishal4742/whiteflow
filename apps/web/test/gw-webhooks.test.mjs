@@ -212,7 +212,7 @@ test("dispatch needs the cron secret: 503 unset, 401 wrong or missing", async ()
   assert.equal((await call({ authorization: process.env.CRON_SECRET })).status, 401, "Bearer is required");
   const okRes = await call({ authorization: `Bearer ${process.env.CRON_SECRET}` });
   assert.equal(okRes.status, 200);
-  assert.deepEqual(await okRes.json(), { processed: 0 });
+  assert.deepEqual(await okRes.json(), { processed: 0, swept: 0 });
   assert.equal((await dispatchGet(req("GET", "/api/v1/webhooks/dispatch", { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }))).status, 200, "Vercel Cron calls GET");
   delete process.env.CRON_SECRET;
   assert.equal((await call({ authorization: "Bearer " })).status, 503);
@@ -224,7 +224,7 @@ test("dispatch processes due deliveries", async () => {
   await enqueueEvent(MERCHANT, "payment.succeeded", {}, Date.now() - 2 * MIN);
   reply = async () => new Response("", { status: 200 });
   const res = await dispatch(req("POST", "/api/v1/webhooks/dispatch", { headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } }));
-  assert.deepEqual(await res.json(), { processed: 1 });
+  assert.deepEqual(await res.json(), { processed: 1, swept: 0 });
   assert.equal((await listHooks())[0].deliveries[0].status, "succeeded");
 });
 

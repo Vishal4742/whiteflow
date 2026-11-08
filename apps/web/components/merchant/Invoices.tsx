@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { cancelInvoice, connectMerchant, createInvoice, walletError } from "@/lib/merchant-wallet";
 import type { DebtorAckView } from "@/lib/server/invoice-acks";
 import { parseUsdt } from "@/lib/usdt";
+import { field } from "@/components/gateway/Frame";
 
 export interface InvoiceRow {
   id: string;
@@ -118,7 +119,7 @@ export function Invoices({ merchant, merchantPay, invoices, today, feeText }: In
   }, [invoices]);
 
   return (
-    <section className="grid scroll-mt-6 gap-6 rounded-[16px] border border-hairline bg-surface p-5 md:p-6 shadow-card" aria-labelledby="invoices-heading">
+    <section className="grid scroll-mt-6 gap-6 rounded-card border border-hairline bg-surface p-5 md:p-6 shadow-card" aria-labelledby="invoices-heading">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-hairline pb-4">
         <div>
           <h2 id="invoices-heading" className="text-[18px] font-semibold text-ink">
@@ -175,7 +176,7 @@ export function Invoices({ merchant, merchantPay, invoices, today, feeText }: In
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search reference or customer…"
-                className="h-9 w-full rounded-[8px] border border-hairline bg-surface px-3 text-xs text-ink placeholder:text-ink-muted focus:border-accent focus:ring-1 focus:ring-accent"
+                className={`${field} placeholder:text-ink-muted`}
                 aria-label="Search invoices"
               />
             </div>
@@ -308,7 +309,6 @@ function NewInvoice({
     }
   }
 
-  const field = "h-10 w-full rounded-[8px] border border-hairline bg-surface px-3 text-sm text-ink focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
 
   return (
     <div className="grid gap-3 rounded-[12px] border border-hairline bg-surface-sunk/40 p-4">
@@ -335,7 +335,7 @@ function NewInvoice({
           <span className="font-medium text-ink-muted">Customer wallet (optional)</span>
           <input ref={walletRef} maxLength={42} autoComplete="off" spellCheck={false} placeholder="0x…" className={`${field} data`} />
         </label>
-        <Button type="submit" aria-disabled={busy} className="h-10 px-5 text-sm font-medium">
+        <Button size="md" type="submit" aria-disabled={busy} className="h-11 px-5 text-sm font-medium">
           {busy ? "Signing in wallet…" : "Issue invoice"}
         </Button>
       </form>
@@ -370,7 +370,7 @@ function CopyLink({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <span className="inline-flex items-center gap-2">
-      <Button
+      <Button size="md"
         variant="quiet"
         onClick={() =>
           navigator.clipboard.writeText(payLink(id)).then(

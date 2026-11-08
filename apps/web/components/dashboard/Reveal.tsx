@@ -15,7 +15,7 @@ function scramble(text: string, progress: number): string {
 export function Reveal({ text }: { text: string }) {
   const [shown, setShown] = useState<string | null>(null);
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const start = performance.now();
     let frame = requestAnimationFrame(function step(now) {
       const progress = Math.min(1, (now - start) / REVEAL_MS);

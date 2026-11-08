@@ -37,7 +37,7 @@ export function QrActions({ kind, id, name }: { kind: QrKind; id: string; name: 
         QR code<span aria-hidden="true" className="ml-1 no-underline transition-transform group-open:rotate-180">▾</span>
       </summary>
       {/* in the flow, not floating: a lifted card next to it would paint over a floating panel */}
-      <div className="mt-1 grid w-60 max-w-full gap-1 rounded-[16px] border border-hairline bg-surface p-3 shadow-card">
+      <div className="mt-1 grid w-60 max-w-full gap-1 rounded-card border border-hairline bg-surface p-3 shadow-card">
         {/* eslint-disable-next-line @next/next/no-img-element -- our own SVG route; next/image would only re-serve it */}
         <img src={src} alt={`QR code for ${name}`} width={216} height={216} loading="lazy" className="aspect-square w-full rounded-[10px] border border-hairline bg-white" />
         <a href={`${src}?download=1`} download className={action}>

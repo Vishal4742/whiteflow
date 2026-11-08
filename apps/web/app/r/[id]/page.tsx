@@ -2,6 +2,7 @@
 // no browser chain reads (FR-PRIV-1). /r/<checkout id> comes from our payment record, its refund line streaming on its
 // own. /r/<payment id> (an invoice payment, or any payment) reads payments(id) and its Paid log on chain, so it
 // survives a server restart.
+import { formatDateTime } from "@/lib/format";
 import { announcePaid } from "@/lib/announce-paid";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
@@ -12,6 +13,8 @@ import { merchantConfig, payConfig } from "@/lib/config";
 import { paidLogs, paymentRefunded, readPayment } from "@/lib/onchain";
 import { getSession, type Payment } from "@/lib/sessions";
 import { EXPLORER, formatUsdt } from "@/lib/usdt";
+
+export const metadata = { title: "Receipt", robots: { index: false } };
 
 // every chain read here waits at most this long; past it, the receipt says so plainly
 const READ_MS = 1_500;
@@ -27,7 +30,7 @@ async function within<T>(work: Promise<T>): Promise<T> {
 }
 
 const refundText = (refunded: bigint) => (refunded === 0n ? "No refunds yet" : `${formatUsdt(refunded)} USDT refunded`);
-const when = (ms: number) => new Date(ms).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" });
+const when = (ms: number) => formatDateTime(ms);
 
 // The refund line streams on its own, so the receipt card (the LCP element) never waits for the chain (tester R1).
 async function RefundStatus({ payment }: { payment: Payment }) {
@@ -38,9 +41,9 @@ async function RefundStatus({ payment }: { payment: Payment }) {
 
 export default function ReceiptPage({ params }: PageProps<"/r/[id]">) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12">
+    <main id="main" className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12">
       <StaticScene />
-      <Suspense fallback={<p className="relative rounded-[28px] bg-surface px-8 py-6 text-ink-muted shadow-float">Opening receipt…</p>}>
+      <Suspense fallback={<p className="relative rounded-sheet bg-surface px-8 py-6 text-ink-muted shadow-float">Opening receipt…</p>}>
         <Receipt params={params} />
       </Suspense>
     </main>
@@ -77,7 +80,7 @@ async function Receipt({ params }: Pick<PageProps<"/r/[id]">, "params">) {
   );
 }
 
-const Unreadable = () => <p className="relative rounded-[28px] bg-surface px-8 py-6 text-ink shadow-float">We can&apos;t open this receipt right now. Try again in a minute.</p>;
+const Unreadable = () => <p className="relative rounded-sheet bg-surface px-8 py-6 text-ink shadow-float">We can&apos;t open this receipt right now. Try again in a minute.</p>;
 
 async function PaymentReceipt({ paymentId }: { paymentId: bigint }) {
   const pay = payConfig();
@@ -121,11 +124,11 @@ function ReceiptCard({ label, amount, merchantName, paidAt, reference, price, re
     <section className="relative grid w-full max-w-[440px] gap-5 rounded-[20px] border border-hairline bg-surface p-7 shadow-float">
       <div className="flex items-center justify-between border-b border-hairline pb-3">
         <WhiteflowWordmark className="text-sm" />
-        <StatusBadge status="paid" label="Confirmed Settlement" />
+        <StatusBadge status="paid" label="Confirmed settlement" />
       </div>
 
       <div>
-        <span className="eyebrow text-ink-muted">{label}</span>
+        <h1 className="eyebrow text-ink-muted">{label}</h1>
         <p className="mt-1 flex flex-wrap items-baseline gap-2">
           <span className="text-[36px] font-semibold tracking-[-0.03em] tabular-nums text-ink">{formatUsdt(amount)}</span>
           <span className="eyebrow font-medium text-ink-muted">USDT</span>
@@ -153,15 +156,15 @@ function ReceiptCard({ label, amount, merchantName, paidAt, reference, price, re
           </div>
         )}
         <div className="flex justify-between gap-4">
-          <dt className="text-ink-muted">Settlement Rail</dt>
-          <dd className="text-xs text-ink">Whitechain Sepolia (T+0)</dd>
+          <dt className="text-ink-muted">Network</dt>
+          <dd className="text-xs text-ink">Whitechain testnet</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-ink-muted">Customer Gas Fee</dt>
-          <dd className="text-xs font-medium text-positive">0.00 WBT (Sponsored by Whiteflow)</dd>
+          <dt className="text-ink-muted">Network fee</dt>
+          <dd className="text-xs font-medium text-positive">Free, paid by Whiteflow</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-ink-muted">Refund Status</dt>
+          <dt className="text-ink-muted">Refund status</dt>
           <dd className="text-xs text-ink">{refund}</dd>
         </div>
       </dl>

@@ -1,5 +1,6 @@
 // Hosted checkout page (FR-PAY-5, FR-PAY-7). Server component: the amount and shop come from our session
 // record, so this page makes no chain reads in the browser (FR-PRIV-1, SRS 1.1).
+import { formatDate } from "@/lib/format";
 import { announcePaid } from "@/lib/announce-paid";
 import { warmRelayer } from "@/lib/relay";
 import { notFound } from "next/navigation";
@@ -15,13 +16,15 @@ import { getSession, type Session } from "@/lib/sessions";
 import { gatewayCheckout, pageState, settlePending } from "@/lib/settle";
 import { formatUsdt } from "@/lib/usdt";
 
+export const metadata = { title: "Checkout", robots: { index: false } };
+
 // The night and the frame prerender; the session streams in (Cache Components needs params inside Suspense).
 // Still scene only: no three.js and no Nym on the pay page (NFR-12 speed budget).
 export default function CheckoutPage({ params }: PageProps<"/checkout/[sessionId]">) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12 text-glass-ink">
+    <main id="main" className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12 text-glass-ink">
       <StaticScene />
-      <Suspense fallback={<p className="relative rounded-[28px] bg-surface px-8 py-6 text-ink-muted shadow-float">Opening checkout…</p>}>
+      <Suspense fallback={<p className="relative rounded-sheet bg-surface px-8 py-6 text-ink-muted shadow-float">Opening checkout…</p>}>
         <CheckoutLoader params={params} />
       </Suspense>
     </main>
@@ -35,7 +38,9 @@ function fxLine(session: Session): string | null {
   if (!p) return null;
   const converted = `${formatUsdt(p.amount)} ${p.currency} = ${formatUsdt(session.amount)} USDT`;
   if (p.currency === "USD") return `${converted} · 1 USDT = 1 USD`;
-  const day = new Date(`${p.rateDate}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  // the rate source can date its quote tomorrow (its own time zone); never print a day after today in India
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+  const day = formatDate(`${p.rateDate > today ? today : p.rateDate}T00:00:00Z`);
   return `${converted} · 1 USD = ${p.rate} ${p.currency}, rate of ${day} · 1 USDT = 1 USD`;
 }
 
@@ -93,8 +98,11 @@ async function CheckoutLoader({ params }: Pick<PageProps<"/checkout/[sessionId]"
       merchantName={session.merchantName}
       verified={merchantVerified(session.merchant)}
       reference={session.reference}
-      // a priced checkout's items are in the shop's currency; the total is the USDT to pay
-      items={session.items.map((item) => ({ name: item.name, qty: item.qty, price: session.priced ? `${formatUsdt(item.price)} ${session.priced.currency}` : formatUsdt(item.price) }))}
+      // each line shows its total (qty × unit price); a priced checkout's lines are in the shop's currency, the total is the USDT to pay
+      items={session.items.map((item) => {
+        const total = formatUsdt(item.price * BigInt(item.qty));
+        return { name: item.name, qty: item.qty, total: session.priced ? `${total} ${session.priced.currency}` : total };
+      })}
       amountText={formatUsdt(amount)}
       code={terms && { totalText: formatUsdt(terms.total), discountText: terms.due < terms.total ? formatUsdt(terms.total - terms.due) : null }}
       fxLine={fxLine(session)}

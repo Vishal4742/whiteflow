@@ -27,7 +27,7 @@ export function RangeForm({ action, value, error, csv }: { action: string; value
           <span className="text-ink-muted">To</span>
           <input type="date" name="to" defaultValue={value.to} required className={`${field} tabular-nums`} />
         </label>
-        <Button type="submit" className="h-11">
+        <Button size="md" type="submit" className="h-11">
           Show
         </Button>
         {csv && (
@@ -48,10 +48,10 @@ export function RangeForm({ action, value, error, csv }: { action: string; value
 
 function Tiles({ label, tiles, className }: { label: string; tiles: Tile[]; className: string }) {
   return (
-    <section aria-label={label} className={`grid gap-px overflow-hidden rounded-[20px] border border-hairline bg-hairline ${className}`}>
+    <section aria-label={label} className={`grid gap-px overflow-hidden rounded-card border border-hairline bg-hairline ${className}`}>
       {tiles.map((tile) => (
         <div key={tile.label} className="grid min-w-0 content-start gap-1.5 bg-surface p-4 md:p-[18px]">
-          <h3 className="eyebrow text-ink-muted">{tile.label}</h3>
+          <h2 className="eyebrow text-ink-muted">{tile.label}</h2>
           <b className="text-[26px] leading-none font-medium tracking-[-0.03em] break-all tabular-nums md:text-[28px]">
             <Reveal text={tile.value} />
           </b>
@@ -63,7 +63,7 @@ function Tiles({ label, tiles, className }: { label: string; tiles: Tile[]; clas
 }
 
 /** A card without padding, for a table that runs to its edges. */
-export const panel = "grid min-w-0 content-start gap-4 rounded-[20px] border border-hairline bg-surface pb-5";
+export const panel = "grid min-w-0 content-start gap-4 rounded-card border border-hairline bg-surface pb-5";
 const cell = "px-3 py-2.5 md:px-5";
 const num = `${cell} text-right`;
 
@@ -78,7 +78,7 @@ function DayTable({ report }: { report: Report }) {
         <p className="text-xs text-ink-muted md:hidden">Swipe the table sideways for fees, net and refunds.</p>
       </div>
       {/* a phone scrolls the table, not the page; the region is focusable so a keyboard can scroll it too */}
-      <div role="region" aria-labelledby="by-day" tabIndex={0} className="overflow-x-auto">
+      <div role="region" aria-label="By day table" tabIndex={0} className="overflow-x-auto">
         <table className="w-full min-w-[520px] border-collapse text-sm tabular-nums">
           <thead className="bg-surface-sunk text-ink-muted">
             <tr>

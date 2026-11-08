@@ -62,7 +62,7 @@ export function Accept() {
                     <CopyButton text={linkUrl} name="the demo payment link" className="copy" />
                   </>
                 ) : (
-                  <span className="min-w-0 truncate">{host}/l/cold-brew</span>
+                  <span className="min-w-0 truncate">{host}/l/…</span>
                 )}
               </div>
             </div>
@@ -120,7 +120,7 @@ export function Accept() {
 }
 
 const STATS = [
-  ["1.4 s", "median time to settle"],
+  ["4.4 s", "from signature to receipt, measured"],
   ["0", "gas paid by customers"],
   ["T+0", "to your wallet"],
   ["0.10", "USDT flat fee per payment"],
@@ -312,6 +312,33 @@ export function Footer() {
           <span className={footLink}>Whitechain testnet only</span>
           <a className={footLink} href="/docs">
             Docs
+          </a>
+          <a className={footLink} href="/mcp">
+            Connect your AI
+          </a>
+          <a className={footLink} href="https://shop.whiteflow.org">
+            Demo shop
+          </a>
+          <a className={footLink} href="https://github.com/Vishal4742/whiteflow">
+            GitHub
+          </a>
+          <a className={footLink} href="/pricing">
+            Pricing
+          </a>
+          <a className={footLink} href="/status">
+            Status
+          </a>
+          <a className={footLink} href="/about">
+            About
+          </a>
+          <a className={footLink} href="/contact">
+            Contact
+          </a>
+          <a className={footLink} href="/privacy">
+            Privacy
+          </a>
+          <a className={footLink} href="/terms">
+            Terms
           </a>
           <a className={footLink} href="/merchant">
             Dashboard

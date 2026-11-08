@@ -22,8 +22,16 @@ test("soft nav: every soft-navigation screen gets the byte-identical /merchant p
 });
 
 test("soft nav: Pages, API keys and Docs send another policy, so they stay full loads both ways", () => {
-  for (const path of ["/merchant/pages", "/merchant/developers", "/docs", "/", "/proofs"]) {
+  for (const path of ["/merchant/pages", "/merchant/developers", "/docs"]) {
     assert.notEqual(cspFor(path), cspFor("/merchant"), `${path} unexpectedly shares the /merchant policy`);
+    assert.equal(softNav("/merchant/payments", path), false, `soft into ${path}`);
+    assert.equal(softNav(path, "/merchant/payments"), false, `soft out of ${path}`);
+  }
+});
+
+test("soft nav: home and /proofs read the chain privately, so they send the dashboard's policy, but stay full loads", () => {
+  for (const path of ["/", "/proofs"]) {
+    assert.equal(cspFor(path), cspFor("/merchant"), `${path} sends no CSP or another one`);
     assert.equal(softNav("/merchant/payments", path), false, `soft into ${path}`);
     assert.equal(softNav(path, "/merchant/payments"), false, `soft out of ${path}`);
   }

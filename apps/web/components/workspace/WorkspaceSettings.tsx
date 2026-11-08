@@ -9,8 +9,10 @@ import { createWalletClient, custom, getAddress, type Address, type EIP1193Provi
 import { CopyButton } from "@/components/CopyButton";
 import { card, field, textLink } from "@/components/gateway/Frame";
 import { StatusBadge } from "@/components/ui/Badge";
+import { formatDate, formatDateTime, shortAddress as short } from "@/lib/format";
 import { walletError } from "@/lib/merchant-wallet";
 import { EXPLORER } from "@/lib/usdt";
+import { buttonClasses } from "@/components/Button";
 
 type Role = "owner" | "operator" | "viewer";
 interface Me {
@@ -23,12 +25,9 @@ interface Policy { version: number; chainId: number; token: string; recipient: s
 interface Proof { nonce: string; message: string; recipient: string; version: number; policyHash: string; token: string; chainId: number }
 interface ApprovalWallets { wallets: { wallet: string; you: boolean; enrolledAt: number; endorsedBy: string | null }[]; firstPinOpen: boolean }
 
-const primary =
-  "h-11 cursor-pointer rounded-pill bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const secondary =
-  "h-11 cursor-pointer rounded-pill border border-current px-5 text-sm font-medium text-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const primary = buttonClasses("primary", "cursor-pointer disabled:cursor-not-allowed disabled:opacity-45", "md");
+const secondary = buttonClasses("outline", "cursor-pointer disabled:cursor-not-allowed disabled:opacity-45", "md");
 const ROLE_LABEL: Record<Role, string> = { owner: "Owner", operator: "Operator", viewer: "Viewer" };
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 class ApiError extends Error {
   readonly status: number;
@@ -324,7 +323,7 @@ function ReceivingWallet({ role, principalWallets }: { role: Role; principalWall
       {owner && step === "idle" && (
         <div className="grid gap-3">
           <label className="grid gap-1 text-sm">
-            <span className="eyebrow text-ink-muted">{current ? "New receiving wallet" : "Receiving wallet"} (Whitechain Testnet)</span>
+            <span className="eyebrow text-ink-muted">{current ? "New receiving wallet" : "Receiving wallet"} (Whitechain testnet)</span>
             <input className={`${field} data`} value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="0x…" spellCheck={false} autoComplete="off" />
           </label>
           <div className="flex flex-wrap gap-3">
@@ -380,9 +379,9 @@ function ReceivingWallet({ role, principalWallets }: { role: Role; principalWall
                 <a className={textLink} href={`${EXPLORER}/address/${proof.recipient}`} target="_blank" rel="noreferrer">View on explorer</a>
               </dd>
             </div>
-            <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Network</dt><dd className="text-ink">Whitechain Testnet (chain {proof.chainId})</dd></div>
-            <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Token</dt><dd className="data break-all text-ink">USDT {getAddress(proof.token)}</dd></div>
-            <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Policy</dt><dd className="data break-all text-ink-muted">version {proof.version} · {proof.policyHash}</dd></div>
+            <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Network</dt><dd className="text-ink">Whitechain testnet</dd></div>
+            <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Token</dt><dd className="data text-ink">USDT · {short(getAddress(proof.token))}</dd></div>
+            <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Policy</dt><dd className="data break-all text-ink-muted">version {proof.version} · {short(proof.policyHash)}</dd></div>
           </dl>
           <p className="text-xs text-ink-muted">Invoices you already published keep the destination they were approved with. This changes where new invoices are paid.</p>
           <label className="flex items-start gap-2 text-sm">
@@ -447,14 +446,18 @@ function ApprovalWalletsPanel({ pinned, principalWallets, onEnrolled }: { pinned
   return (
     <div className="grid gap-3 border-t border-hairline pt-4">
       <h3 className="font-medium text-ink">Approval wallets</h3>
-      <p className="text-xs text-ink-muted">
-        Only these wallets can approve where this workspace is paid. A wallet linked to a sign-in later can&apos;t, until an approval wallet endorses it. A solo
-        Owner who loses every approval wallet needs Whiteflow support to change the policy.
-      </p>
+      <p className="text-xs text-ink-muted">Only these wallets can approve where this workspace is paid.</p>
+      <details className="text-xs text-ink-muted">
+        <summary className="cursor-pointer select-none">How approval wallets work</summary>
+        <p className="mt-2">
+          A wallet linked to a sign-in later can&apos;t approve until an approval wallet endorses it. A solo Owner who loses every approval wallet needs
+          Whiteflow support to change the policy.
+        </p>
+      </details>
       <ul className="grid gap-1 text-sm">
         {pinned.wallets.map((w) => (
-          <li key={w.wallet} className="data break-all">
-            {w.wallet} <span className="text-xs text-ink-muted">({w.you ? "yours" : "another Owner's"}, {w.endorsedBy ? `endorsed by ${short(w.endorsedBy)}` : "pinned by the first activation"})</span>
+          <li key={w.wallet} className="data">
+            {short(getAddress(w.wallet))} <span className="text-xs text-ink-muted">({w.you ? "yours" : "another owner's"}, {w.endorsedBy ? `endorsed by ${short(w.endorsedBy)}` : "pinned by the first activation"})</span>
           </li>
         ))}
       </ul>
@@ -484,7 +487,7 @@ function ApprovalWalletsPanel({ pinned, principalWallets, onEnrolled }: { pinned
             {short(request.endorser)} must sign this endorsement (free, moves no funds). If it&apos;s in your browser wallet, sign it here. Otherwise send the message to its
             Owner and paste the signature they send back.
           </p>
-          <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-[8px] bg-surface-sunk p-3 text-xs">{request.message}</pre>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-field bg-surface-sunk p-3 text-xs">{request.message}</pre>
           <div className="flex flex-wrap items-center gap-2">
             <button type="button" className={primary} disabled={busy} onClick={() => void step(async () => finish(await sign(request.endorser, request.message)))}>
               Sign with {short(request.endorser)}
@@ -513,24 +516,26 @@ function ApprovalWalletsPanel({ pinned, principalWallets, onEnrolled }: { pinned
 
 function PolicyFacts({ policy }: { policy: Policy }) {
   return (
+    <>
     <dl className="grid gap-3 text-sm sm:grid-cols-2">
       <div className="grid min-w-0 gap-1 sm:col-span-2">
         <dt className="eyebrow text-ink-muted">Pay out to</dt>
         <dd className="flex flex-wrap items-center gap-2">
-          <span className="data break-all text-ink">{getAddress(policy.recipient)}</span>
+          <span className="data text-ink">{short(getAddress(policy.recipient))}</span>
           <CopyButton text={getAddress(policy.recipient)} name="receiving wallet" />
           <a className={textLink} href={`${EXPLORER}/address/${policy.recipient}`} target="_blank" rel="noreferrer">View on explorer</a>
         </dd>
       </div>
-      <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Network</dt><dd className="text-ink">Whitechain Testnet (chain {policy.chainId})</dd></div>
-      <div className="grid min-w-0 gap-1"><dt className="eyebrow text-ink-muted">Token</dt><dd className="data break-all text-ink">USDT {getAddress(policy.token)}</dd></div>
-      <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Status</dt><dd className="text-ink">Wallet control confirmed · approved {new Date(policy.approvedAt).toLocaleString()}</dd></div>
-      <div className="grid min-w-0 gap-1"><dt className="eyebrow text-ink-muted">Approved with</dt><dd className="data break-all text-ink-muted">{getAddress(policy.approvalWallet)}</dd></div>
-      {policy.v1Obligations && (
-        <p className="text-xs text-ink-muted sm:col-span-2">This wallet has an existing Capital advance: it keeps collecting through the original payment contract, which repays investors.</p>
-      )}
-      <p className="text-xs text-ink-muted sm:col-span-2">“Wallet control confirmed” means the wallet signed our proof. It doesn&apos;t verify the business itself.</p>
+      <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Network</dt><dd className="text-ink">Whitechain testnet</dd></div>
+      <div className="grid min-w-0 gap-1"><dt className="eyebrow text-ink-muted">Token</dt><dd className="data text-ink">USDT · {short(getAddress(policy.token))}</dd></div>
+      <div className="grid gap-1"><dt className="eyebrow text-ink-muted">Status</dt><dd className="text-ink">Wallet control confirmed · approved {formatDateTime(policy.approvedAt)}</dd></div>
+      <div className="grid min-w-0 gap-1"><dt className="eyebrow text-ink-muted">Approved with</dt><dd className="data text-ink-muted">{short(getAddress(policy.approvalWallet))}</dd></div>
     </dl>
+    {policy.v1Obligations && (
+      <p className="text-xs text-ink-muted">This wallet has an existing Capital advance: it keeps collecting through the original payment contract, which repays investors.</p>
+    )}
+    <p className="text-xs text-ink-muted">“Wallet control confirmed” means the wallet signed our proof. It doesn&apos;t verify the business itself.</p>
+    </>
   );
 }
 
@@ -565,7 +570,10 @@ function Team({ role }: { role: Role }) {
   return (
     <section aria-labelledby="team-heading" className={card}>
       <h2 id="team-heading" className="text-[17px] font-semibold text-ink">Team</h2>
-      <p className="text-xs text-ink-muted">Owner: team, settings, receiving wallet. Operator: drafts invoices, inspects payments, prepares links and refund proposals. Viewer: reads only.</p>
+      <details className="text-xs text-ink-muted">
+        <summary className="cursor-pointer select-none">What each role can do</summary>
+        <p className="mt-2">Owner: team, settings, receiving wallet. Operator: drafts invoices, inspects payments, prepares links and refund proposals. Viewer: reads only.</p>
+      </details>
       {members === null && !error && <p className="text-sm text-ink-muted">Loading…</p>}
       {members && (
         <ul className="grid divide-y divide-hairline">
@@ -578,8 +586,8 @@ function Team({ role }: { role: Role }) {
             <li key={m.principalId} className="flex flex-wrap items-center justify-between gap-3 py-3">
               <div className="grid min-w-0 gap-0.5">
                 {/* other members show a masked label only (review M2); your own row shows your email or wallet */}
-                <span className="break-all text-sm text-ink">{m.you ? (m.email ?? (m.wallets[0] ? getAddress(m.wallets[0]) : m.label)) : m.label}{m.you && " (you)"}</span>
-                <span className="text-xs text-ink-muted">since {new Date(m.since).toLocaleDateString()}</span>
+                <span className="break-all text-sm text-ink">{m.you ? (m.email ?? (m.wallets[0] ? short(getAddress(m.wallets[0])) : m.label)) : m.label}{m.you && " (you)"}</span>
+                <span className="text-xs text-ink-muted">since {formatDate(m.since)}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="sr-only" htmlFor={`role-${m.principalId}`}>Role of {m.label}</label>

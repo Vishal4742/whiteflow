@@ -1,9 +1,10 @@
 // POST /api/v1/capital/fund (batch 023): gasless investor funding through the relayer's fund action (FR-ADV-3).
 // Checked before relaying (eligible investor, open offer, units left); the relayer's answers become plain messages.
-import { test } from "node:test";
+import { test, before, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 
 import { encodeAbiParameters, keccak256 } from "viem";
+import { setupDb, resetDb } from "./gw-helpers.mjs"; // the per-claim funding lock lives in Postgres (code review 2026-11-08 F5)
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 
 const { fundOffer } = await import("../lib/server/capital-fund.ts");
@@ -45,6 +46,9 @@ function world({ o = offer(), eligible = true, holders = [], reply = { status: 2
   };
   return { deps: { read, fetch, relayerUrl: "https://relayer.test", secret: "s3cret", schedule: (task) => scheduled.push(task) }, posts, scheduled };
 }
+
+before(setupDb);
+beforeEach(() => resetDb());
 
 test("a valid funding is relayed once as the fund action and answers {tx_hash, block_number}; Arkiv syncs after", async () => {
   const w = world();
@@ -136,7 +140,8 @@ test("a part buy must leave a remainder that still costs at least 1 USDT, or the
 });
 
 test("a validBefore outside the relayer's 30 s – 15 min window is refused before any read or relay", async () => {
-  for (const validBefore of [BigInt(NOW + 10), BigInt(NOW + 1000)]) {
+  const now = Math.floor(Date.now() / 1000); // the time of this test, not of the file's import (the test database's setup runs first)
+  for (const validBefore of [BigInt(now + 10), BigInt(now + 1000)]) {
     const w = world();
     await assert.rejects(fundOffer(await signed({ validBefore }), w.deps), (e) => e.status === 400 && /window/i.test(e.message));
     assert.equal(w.posts.length, 0);
@@ -157,8 +162,29 @@ test("the relayer's refusals become the web's plain messages", async () => {
     [{ throws: new Error("socket hang up") }, 504, UNKNOWN],
   ];
   for (const [opts, status, message] of cases) {
+    await resetDb(); // an unknown outcome (504) keeps the claim's funding lock (F5): each case starts unlocked
     const w = world(opts);
     await assert.rejects(fundOffer(body, w.deps), (e) => e.status === status && (typeof message === "string" ? e.message === message : message.test(e.message)), JSON.stringify(opts));
     assert.equal(w.scheduled.length, 0);
   }
+});
+
+test("one funding per claim at a time: while one is being relayed, a second is refused before the holder check (code review 2026-11-08 F5)", async () => {
+  const { claimPayment, releasePayment } = await import("../lib/sessions.ts");
+  const held = await claimPayment("fund:1"); // the first investor's funding is being relayed
+  assert.ok(held);
+  const w = world();
+  await assert.rejects(fundOffer(body, w.deps), { status: 409, message: "Another investor is buying into this offer right now. Try again in a moment." });
+  assert.equal(w.posts.length, 0, "nothing relayed");
+  await releasePayment("fund:1", held);
+  assert.deepEqual(await fundOffer(body, world().deps), { tx_hash: TX, block_number: "123" }, "free again once the first is done");
+});
+
+test("an unknown relay outcome keeps the claim's lock until it lapses, so a racing first buy can't pass the holder cap (F5)", async () => {
+  const { claimPayment } = await import("../lib/sessions.ts");
+  await assert.rejects(fundOffer(body, world({ throws: new Error("socket hang up") }).deps), { status: 504 });
+  assert.equal(await claimPayment("fund:1"), null, "still held: the funding may yet mint");
+  const w = world();
+  await assert.rejects(fundOffer(body, w.deps), { status: 409 }, "the next funding is locked out");
+  assert.equal(w.posts.length, 0, "and nothing is relayed");
 });

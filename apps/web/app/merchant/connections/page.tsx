@@ -1,5 +1,6 @@
 // Whiteflow Connections Workspace (/merchant/connections):
 // Manage API credentials, webhook endpoints, and Model Context Protocol (MCP) connectivity.
+import { formatDateTime, formatTime } from "@/lib/format";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { McpInstall } from "@/components/McpInstall";
@@ -14,8 +15,10 @@ import { currentWorkspace } from "@/lib/merchant-session";
 import { keyJson, listKeys } from "@/lib/server/keys";
 import { deliveredEvents, listWebhooks } from "@/lib/server/webhooks";
 
-const ist = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
-const istTime = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+export const metadata = { title: "Connections" };
+
+const ist = (iso: string) => formatDateTime(iso);
+const istTime = (iso: string) => formatTime(iso);
 
 const header = (
   <EditorialHeader
