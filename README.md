@@ -1,5 +1,12 @@
 # Whiteflow
 
+[![CI](https://github.com/Vishal4742/whiteflow/actions/workflows/ci.yml/badge.svg)](https://github.com/Vishal4742/whiteflow/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Vishal4742/whiteflow/actions/workflows/deploy.yml/badge.svg)](https://github.com/Vishal4742/whiteflow/actions/workflows/deploy.yml)
+[![Release](https://img.shields.io/github/v/release/Vishal4742/whiteflow?color=3b4fd9)](https://github.com/Vishal4742/whiteflow/releases)
+[![npm: whiteflow-mcp](https://img.shields.io/npm/v/whiteflow-mcp?label=whiteflow-mcp&color=3b4fd9)](https://www.npmjs.com/package/whiteflow-mcp)
+[![License: MIT](https://img.shields.io/badge/license-MIT-3b4fd9)](LICENSE)
+[![Live: whiteflow.org](https://img.shields.io/badge/live-whiteflow.org-3b4fd9)](https://whiteflow.org)
+
 **A stablecoin payment gateway for merchants who sell internationally: payment links, payment pages, invoices, QR codes, discount vouchers, multi-currency prices, sales reports and instant settlement in USDT on Whitechain, with a one-line payment button and an SDK. Customers pay with zero gas. Plus Capital: get paid early from future sales.** Testnet only (Whitechain Sepolia).
 
 > Status (Nov 7, submission): live on Whitechain testnet at [whiteflow.org](https://whiteflow.org); every acceptance test below links its on-chain transaction. Requirements: `docs/SRS.md`. Design: `ARCHITECTURE.md`. How we built it: `AI_USAGE.md`.
@@ -126,4 +133,4 @@ The default checkout uses a guest key kept in the browser (no email recovery) an
 - Business accounts with roles, and settlement-address changes that need a second approval.
 
 ## Team and AI usage
-⟨team⟩ · AI usage per file: `AI_USAGE.md`
+Built by the [Whiteflow contributors](https://github.com/Vishal4742/whiteflow/graphs/contributors) · AI usage per file: [`AI_USAGE.md`](AI_USAGE.md) · Changes: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) · Security: [`.github/SECURITY.md`](.github/SECURITY.md)
