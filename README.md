@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-3b4fd9)](LICENSE)
 [![Live: whiteflow.org](https://img.shields.io/badge/live-whiteflow.org-3b4fd9)](https://whiteflow.org)
 
-**A stablecoin payment gateway for merchants who sell internationally: payment links, payment pages, invoices, QR codes, discount vouchers, multi-currency prices, sales reports and instant settlement in USDT on Whitechain, with a one-line payment button and an SDK. Customers pay with zero gas. Plus Capital: get paid early from future sales.** Testnet only (Whitechain Sepolia).
+USDT payments for merchants on Whitechain. Customers pay no gas, and the money lands in the merchant's own wallet in the same transaction. **Capital** lets a merchant get paid early from future sales. Testnet only (Whitechain Sepolia, chain 1874).
 
 [Live app](https://whiteflow.org) · [Demo shop](https://shop.whiteflow.org) · [API docs](https://whiteflow.org/docs) · [MCP](https://whiteflow.org/mcp) · Video (2:45): ⟨url⟩
 
