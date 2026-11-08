@@ -25,7 +25,7 @@ const SECTIONS: { id: string; title: string; items: string[] }[] = [
       "Your browser keeps that key and reuses it at every later checkout, so those payments share one payer address on chain. Clearing this site's data deletes the key.",
       "For each checkout we store the business, amount, reference, items, price and currency conversion, return link and times, and once paid, the payer address and the transaction. There is no name or email field.",
       "Pay pages make no chain reads from your browser: our server reads the chain instead.",
-      "Paying with a phone wallet or with email goes through Privy and the WalletConnect relay, which load only when you choose that option. Privy receives your IP address, browser details and a Privy analytics id; with email, also the email, that wallet's address and the payment approval it signs. The WalletConnect relay sees your IP address, and its messages are end-to-end encrypted. We sign out of Privy and clear its session after each checkout.",
+      "Paying with a phone wallet or with email goes through Privy and the WalletConnect relay, which load only when you choose that option. Privy receives your IP address, browser details and a Privy analytics id; with email, also the email, that wallet's address and the payment approval it signs. The WalletConnect relay sees your IP address, and its messages are end-to-end encrypted. We sign out of Privy and clear its session and analytics id from your browser after each checkout; what Privy already received stays with Privy.",
       "A payment page with a logo loads the logo from the address the business chose, so that site sees your IP address.",
       "Every payment is a public transaction on Whitechain testnet that anyone can look up.",
     ],

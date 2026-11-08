@@ -48,8 +48,10 @@ docs/PITCH.md
 /merchant-capital-plus-main/
 
 # Agent working files: briefs, batch reviews, phase notes, agent config (owner, 2026-11-07: keep them out of the
-# public repo). They stay on disk in each checkout; AGENTS.md, CLAUDE.md and PIPELINE.md are covered by /*.md above.
+# public repo), and the per-lane agent prompts. They stay on disk in each checkout; AGENTS.md, CLAUDE.md and PIPELINE.md
+# are covered by /*.md above. tools/ stays tracked: ~/.local/bin/agentbus and the hooks run from a checkout's tools/.
 .batches/
 .claude/
+docs/prompts/
 notes/
 opencode.json
