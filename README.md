@@ -1,6 +1,13 @@
 # Whiteflow
 
-USDT payments for merchants on Whitechain. Customers pay no gas, and the money lands in the merchant's own wallet in the same transaction. **Capital** lets a merchant get paid early from future sales. Testnet only (Whitechain Sepolia, chain 1874).
+[![CI](https://github.com/Vishal4742/whiteflow/actions/workflows/ci.yml/badge.svg)](https://github.com/Vishal4742/whiteflow/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Vishal4742/whiteflow/actions/workflows/deploy.yml/badge.svg)](https://github.com/Vishal4742/whiteflow/actions/workflows/deploy.yml)
+[![Release](https://img.shields.io/github/v/release/Vishal4742/whiteflow?color=3b4fd9)](https://github.com/Vishal4742/whiteflow/releases)
+[![npm: whiteflow-mcp](https://img.shields.io/npm/v/whiteflow-mcp?label=whiteflow-mcp&color=3b4fd9)](https://www.npmjs.com/package/whiteflow-mcp)
+[![License: MIT](https://img.shields.io/badge/license-MIT-3b4fd9)](LICENSE)
+[![Live: whiteflow.org](https://img.shields.io/badge/live-whiteflow.org-3b4fd9)](https://whiteflow.org)
+
+**A stablecoin payment gateway for merchants who sell internationally: payment links, payment pages, invoices, QR codes, discount vouchers, multi-currency prices, sales reports and instant settlement in USDT on Whitechain, with a one-line payment button and an SDK. Customers pay with zero gas. Plus Capital: get paid early from future sales.** Testnet only (Whitechain Sepolia).
 
 [Live app](https://whiteflow.org) · [Demo shop](https://shop.whiteflow.org) · [API docs](https://whiteflow.org/docs) · [MCP](https://whiteflow.org/mcp) · Video (2:45): ⟨url⟩
 
@@ -110,5 +117,5 @@ Coverage of the four deployed contracts (`forge coverage --ir-minimum`): 99.1% o
 ## What's next
 Pay from another chain, starting with one tested corridor (Ethereum Sepolia USDC into Whitechain USDT) with an exact amount and a refund path.
 
-## Team
-⟨team⟩ · How we used AI: [AI_USAGE.md](AI_USAGE.md) · Requirements: [docs/SRS.md](docs/SRS.md) · Design: [ARCHITECTURE.md](ARCHITECTURE.md) · [MIT licence](LICENSE)
+## Team and AI usage
+Built by the [Whiteflow contributors](https://github.com/Vishal4742/whiteflow/graphs/contributors) · AI usage per file: [`AI_USAGE.md`](AI_USAGE.md) · Changes: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) · Security: [`.github/SECURITY.md`](.github/SECURITY.md)
