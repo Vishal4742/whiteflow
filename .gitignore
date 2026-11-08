@@ -38,6 +38,7 @@ docs/PITCH.md
 # root-level .md file are local; the project's own root docs listed below stay tracked.
 /*.md
 !/AI_USAGE.md
+!/CHANGELOG.md
 !/ARCHITECTURE.md
 !/PHASES.md
 !/README.md
