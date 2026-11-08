@@ -12,7 +12,7 @@ export function EmptyState({ icon, title, description, action, className = "" }:
   return (
     <div
       role="status"
-      className={`grid content-center justify-items-center gap-3 rounded-[16px] border border-dashed border-hairline bg-surface/50 px-6 py-12 text-center ${className}`}
+      className={`grid content-center justify-items-center gap-3 rounded-card border border-dashed border-hairline bg-surface/50 px-6 py-12 text-center ${className}`}
     >
       {icon ? (
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">

@@ -3,6 +3,7 @@
 // checks run before a call. Our server reads the lists, reports and settlements from lib/server directly
 // (lib/gateway-server.ts). Pure and browser-safe; field names stay snake_case, as on the wire. Amounts stay the API's
 // decimal strings: the screens format them for display and never re-add them.
+import { formatDateTime } from "./format.ts";
 import { GatewayError, wire, type Transport } from "./gateway-client.ts";
 import { amountText, type Checked } from "./gateway-forms.ts";
 import { istDay } from "./dashboard.ts";
@@ -246,7 +247,7 @@ export function reportTiles(r: Report): { money: Tile[]; people: Tile[] } {
 export const isZero = (amount: string) => units(amount) === 0n;
 
 /** A time in India, like "6 Nov, 08:30". */
-export const istText = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: REPORT_TZ });
+export const istText = (iso: string) => formatDateTime(iso);
 
 /** A report day ("2026-11-06") as "6 Nov". */
 export const dayLabel = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });

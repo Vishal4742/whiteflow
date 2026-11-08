@@ -7,6 +7,7 @@
 // answers sooner for one checkout.
 import { payConfig } from "../../../../lib/config.ts";
 import { paidLogs, readPayment } from "../../../../lib/onchain.ts";
+import { handle, sharedRateLimit } from "../../../../lib/server/http.ts";
 import { listPayments } from "../../../../lib/sessions.ts";
 import { shopCaller } from "../../../../lib/shop-auth.ts";
 import { plainUsdt as usdt } from "../../../../lib/usdt.ts"; // one API amount format across lanes: "1234.50"
@@ -17,9 +18,13 @@ const MAX_LIMIT = 100;
 const fail = (status: number, error: string) => Response.json({ error }, { status });
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 
-export async function GET(request: Request) {
+export const GET = (request: Request) => handle(() => get(request));
+
+async function get(request: Request): Promise<Response> {
   const shop = await shopCaller(request);
   if ("error" in shop) return fail(shop.status, shop.error);
+  // code review 2026-11-08 F3: a Blockscout index read plus up to 100 payments() reads per call, as /reports limits
+  await sharedRateLimit(`payments:${shop.merchant.toLowerCase()}`, 30, 60_000, "memory");
   const pay = payConfig();
   if (!pay) return fail(503, "Payments aren't connected on this server yet.");
 

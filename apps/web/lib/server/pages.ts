@@ -6,6 +6,7 @@ import { paidCounts } from "./checkouts.ts";
 import { query } from "./db.ts";
 import { HttpError, currencyField, httpsUrl, merchantName, merchantVerified, newId, newSlug, textField, type Currency } from "./http.ts";
 import { MAX_LIST, decimal, given, iso, limitCheckouts, openCheckout, payablePrices, priceField, readCheckoutBody } from "./links.ts";
+import { settleSoon } from "../settle.ts";
 import { dispatchSoon } from "./webhooks.ts";
 
 const MAX_ITEMS = 20;
@@ -117,6 +118,7 @@ export async function listPages(merchant: Address): Promise<Page[]> {
 
 export async function pageBySlug(slug: string): Promise<Page | null> {
   dispatchSoon(); // as linkBySlug: due webhook retries ride on checkout traffic
+  settleSoon(); // and pending checkouts get settled from the chain (code review 2026-11-08 F1)
   const rows = await query<PageRow>(`SELECT ${COLUMNS} FROM app_gw_pages WHERE slug = $1`, [slug]);
   return rows.length ? (await withPayments(rows))[0] : null;
 }

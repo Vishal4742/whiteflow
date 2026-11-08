@@ -92,7 +92,7 @@ function NewKeyCard() {
             </label>
           ))}
         </fieldset>
-        <Button type="submit" aria-disabled={busy} className="justify-self-start">
+        <Button size="md" type="submit" aria-disabled={busy} className="justify-self-start">
           {busy ? "Creating…" : "Create key"}
         </Button>
       </form>
@@ -160,16 +160,16 @@ function Revoke({ apiKey }: { apiKey: KeyRow }) {
         <div role="group" aria-label={`Revoke ${apiKey.label}?`} className="grid justify-items-end gap-1">
           <p className="max-w-72 text-right text-sm">{KINDS[apiKey.kind].stops}</p>
           <span className="flex flex-wrap items-center justify-end gap-x-2">
-            <Button variant="quiet" className="whitespace-nowrap" onClick={revoke} aria-disabled={busy}>
+            <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={revoke} aria-disabled={busy}>
               {busy ? "Revoking…" : "Revoke key"}
             </Button>
-            <Button variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
+            <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
               Keep it
             </Button>
           </span>
         </div>
       ) : (
-        <Button variant="quiet" onClick={() => setConfirming(true)}>
+        <Button size="md" variant="quiet" onClick={() => setConfirming(true)}>
           Revoke
         </Button>
       )}

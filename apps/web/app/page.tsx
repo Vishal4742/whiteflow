@@ -4,11 +4,13 @@ import "@/components/landing/landing.css";
 import { Hero, Nav } from "@/components/landing/Hero";
 import { Accept, Capital, Developers, Footer, Grow, Poster, Settle } from "@/components/landing/Sections";
 
+export const metadata = { alternates: { canonical: "/" } };
+
 export default function Home() {
   return (
     <div className="lp">
       <Nav />
-      <main>
+      <main id="main">
         <Hero />
         <Accept />
         <Settle />

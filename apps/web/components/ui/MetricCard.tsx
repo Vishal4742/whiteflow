@@ -19,7 +19,7 @@ export function MetricCard({ label, value, unit, subtext, tone = "neutral", icon
   }[tone];
 
   return (
-    <div className={`grid content-start gap-1.5 rounded-[16px] border border-hairline bg-surface p-5 transition-shadow hover:shadow-card ${className}`}>
+    <div className={`grid content-start gap-1.5 rounded-card border border-hairline bg-surface p-5 transition-shadow hover:shadow-card ${className}`}>
       <div className="flex items-center justify-between gap-2">
         <span className="eyebrow text-ink-muted">{label}</span>
         {icon && <span className="text-ink-muted">{icon}</span>}

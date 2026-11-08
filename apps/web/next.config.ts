@@ -50,9 +50,9 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }, // no page uses them
         ],
       },
-      // ponytail: CSP only where nothing third-party loads; home and /proofs need Nym's CDNs and gateways
       { source: "/checkout/:path*", headers: paySheetCsp },
       { source: "/pay/:path*", headers: paySheetCsp },
       // business sign-in (batch 050, FR-BIZ-6 v3.1): the only other page that loads Privy (email or wallet login, no embedded
@@ -78,6 +78,9 @@ const nextConfig: NextConfig = {
       { source: "/docs", headers: csp },
       // /mcp (connect an AI assistant) is public and loads nothing third-party; its install links are plain navigations
       { source: "/mcp", headers: csp },
+      // home and /proofs read the chain privately like the dashboard (Nym's bootstrap, CDNs and gateways): the same policy
+      { source: "/", headers: merchantCsp },
+      { source: "/proofs", headers: merchantCsp },
     ];
   },
   partialPrefetching: true,

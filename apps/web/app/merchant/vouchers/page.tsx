@@ -10,6 +10,8 @@ import { istText, voucherStatus } from "@/lib/gateway-money";
 import { merchantVouchers, readFailure } from "@/lib/gateway-server";
 import { currentMerchant } from "@/lib/merchant-session";
 
+export const metadata = { title: "Vouchers" };
+
 const header = (
   <EditorialHeader label="Vouchers" lede="Percent or a fixed amount off, with an end date and a usage limit. Each code is also recorded on Arkiv, where it expires with the code.">
     Reward with <span className="emphasis">a code.</span>

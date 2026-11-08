@@ -12,6 +12,8 @@ import { merchantPages, originOf, readFailure } from "@/lib/gateway-server";
 import { currentMerchant } from "@/lib/merchant-session";
 import { merchantName, merchantVerified } from "@/lib/server/http";
 
+export const metadata = { title: "Payment pages" };
+
 const header = (
   <EditorialHeader label="Payment pages" lede="Your logo, your colour, your items. Customers pick what they want on one page and pay on the hosted checkout.">
     A shop page <span className="emphasis">without</span> a shop.

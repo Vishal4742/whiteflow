@@ -93,7 +93,7 @@ function NewEndpoint({ full }: { full: boolean }) {
             We send <code className="data">payment.succeeded</code> and <code className="data">payment.refunded</code>, signed with this
             endpoint&apos;s secret, and retry after 1, 5 and 30 minutes.
           </p>
-          <Button type="submit" aria-disabled={busy} className="justify-self-start">
+          <Button size="md" type="submit" aria-disabled={busy} className="justify-self-start">
             {busy ? "Adding…" : "Add endpoint"}
           </Button>
         </form>
@@ -193,7 +193,7 @@ function SendTest({ hook }: { hook: WebhookRow }) {
   });
   return (
     <div className="grid min-w-0 gap-1">
-      <Button variant="quiet" className="justify-self-start text-sm" onClick={act} aria-disabled={busy}>
+      <Button size="md" variant="quiet" className="justify-self-start text-sm" onClick={act} aria-disabled={busy}>
         {busy ? "Sending…" : "Send test event"}
       </Button>
       <span role="status" className="text-sm text-ink-muted empty:hidden">
@@ -212,7 +212,7 @@ function Resend({ delivery }: { delivery: DeliveryRow }) {
   const { busy, error, act } = useAction(async () => void (await devClient().resend(delivery.id)));
   return (
     <div className="col-span-2 grid justify-items-start md:col-span-1 md:justify-items-end">
-      <Button variant="quiet" className="text-sm" onClick={act} aria-disabled={busy} aria-label={`Resend ${delivery.event} from ${delivery.atText}`}>
+      <Button size="md" variant="quiet" className="text-sm" onClick={act} aria-disabled={busy} aria-label={`Resend ${delivery.event} from ${delivery.atText}`}>
         {busy ? "Sending…" : "Resend"}
       </Button>
       {error && (
@@ -234,16 +234,16 @@ function Delete({ hook }: { hook: WebhookRow }) {
         <div role="group" aria-label={`Delete the endpoint ${hook.url}?`} className="grid justify-items-end gap-1">
           <p className="max-w-72 text-right text-sm">We stop sending events to this URL, and its delivery history goes too.</p>
           <span className="flex flex-wrap items-center justify-end gap-x-2">
-            <Button variant="quiet" className="text-sm whitespace-nowrap" onClick={act} aria-disabled={busy}>
+            <Button size="md" variant="quiet" className="text-sm whitespace-nowrap" onClick={act} aria-disabled={busy}>
               {busy ? "Deleting…" : "Delete endpoint"}
             </Button>
-            <Button variant="quiet" className="text-sm whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
+            <Button size="md" variant="quiet" className="text-sm whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
               Keep it
             </Button>
           </span>
         </div>
       ) : (
-        <Button variant="quiet" className="text-sm" onClick={() => setConfirming(true)}>
+        <Button size="md" variant="quiet" className="text-sm" onClick={() => setConfirming(true)}>
           Delete
         </Button>
       )}

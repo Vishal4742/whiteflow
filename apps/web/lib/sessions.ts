@@ -148,6 +148,11 @@ export async function listPayments(merchant: string): Promise<{ session: Session
 // so a live attempt's lock never lapses under it, and one left by a crashed instance frees itself after LOCK_S.
 // The lock's expiry is its owner token: a release deletes only its own row, so an attempt that outlived a lapsed lock
 // can't free the lock a later attempt took (security review 026 F1). Raise LOCK_S with maxDuration if it ever exceeds 300 s.
+/** The oldest checkouts holding an attempt whose outcome is unknown, for the sweep (lib/settle.ts settleSoon). */
+export async function pendingSessionIds(limit: number): Promise<string[]> {
+  return (await query<{ id: string }>("SELECT id FROM app_web_sessions WHERE pending IS NOT NULL ORDER BY created_at LIMIT $1", [limit])).map((r) => r.id);
+}
+
 const LOCK_S = 300;
 
 /** The in-flight key of an invoice, shared by its pay route and its page. */

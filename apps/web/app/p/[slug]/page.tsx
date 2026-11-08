@@ -13,11 +13,13 @@ import { SLUG, type PublicPage } from "@/lib/gateway-client";
 import { amountText, checkoutMessage, pageQuantities } from "@/lib/gateway-forms";
 import { logFailure, publicPage } from "@/lib/gateway-server";
 
+export const metadata = { title: "Payment page", robots: { index: false } };
+
 export default function HostedPage({ params, searchParams }: PageProps<"/p/[slug]">) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12">
+    <main id="main" className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12">
       <StaticScene />
-      <Suspense fallback={<p className="relative rounded-[28px] bg-surface px-8 py-6 text-ink-muted shadow-float">Opening the page…</p>}>
+      <Suspense fallback={<p className="relative rounded-sheet bg-surface px-8 py-6 text-ink-muted shadow-float">Opening the page…</p>}>
         <PageLoader params={params} searchParams={searchParams} />
       </Suspense>
     </main>

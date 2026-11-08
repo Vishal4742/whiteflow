@@ -21,6 +21,7 @@ import {
 } from "viem";
 import { whitechainSepolia } from "viem/chains";
 import { getChainClient } from "./anon.ts";
+import { shortAddress as short } from "./format.ts";
 import { countRead, readMeter, setPrivateStatus } from "./read-meter.ts";
 import { USDT } from "./usdt.ts";
 
@@ -61,7 +62,6 @@ const RECEIPT_POLL_MS = 1_000; // about a block
 // a booted Nym read takes about 2 s; one that hangs past this goes to the wallet instead, so a refund never waits on Nym
 const PRIVATE_READ_MS = 10_000;
 
-const short = (a: Address) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 let privateReads: Awaited<ReturnType<typeof getChainClient>> | undefined; // the Anon-RPC client, once booted
 

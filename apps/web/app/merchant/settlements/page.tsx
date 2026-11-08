@@ -17,6 +17,8 @@ import { reportRange, type Settlements } from "@/lib/gateway-money";
 import { merchantSettlements, readFailure } from "@/lib/gateway-server";
 import { currentMerchant } from "@/lib/merchant-session";
 
+export const metadata = { title: "Settlements" };
+
 const header = (
   <EditorialHeader label="Settlements" lede="No payout schedule and nothing held back: each payment lands in your wallet in its own transaction, split with any investors on the way.">
     Settled before the <span className="emphasis">receipt prints.</span>

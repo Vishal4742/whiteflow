@@ -105,7 +105,7 @@ export function chartPaths(values: number[], w: number, h: number, p: number) {
 const WEI_PER_STEP = 10n ** 12n; // 6 decimals of WBT (18 decimals)
 
 /** One line on what WBT is, next to every fee figure (G4 UX review F1). */
-export const WBT_HINT = "WBT is Whitechain's own coin, used to pay network fees. The relayer pays them, so your customers never need any.";
+export const WBT_HINT = "WBT is Whitechain's own coin, used to pay network fees. Whiteflow pays them, so your customers never need any.";
 
 /** WBT for a merchant's eyes: rounded half up to a fixed 6 decimals (so a column lines up; G4 UX review F1), never an
  *  exponent; a fee under 0.000001 reads "<0.000001" rather than a misleading 0. */

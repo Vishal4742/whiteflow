@@ -119,7 +119,7 @@ function InvoiceForm({ merchant, invoices, preselect, now }: Omit<InvoicePanelPr
         )}
       </p>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button type="submit" aria-disabled={busy(listing.state)}>
+        <Button size="md" type="submit" aria-disabled={busy(listing.state)}>
           {busy(listing.state) ? "Listing…" : "List the invoice"}
         </Button>
         <p className="max-w-[60ch] text-xs text-ink-muted">Your wallet sends the listing and pays about 0.0008 WBT. Investors pay you when they fund it. {WBT_HINT}</p>

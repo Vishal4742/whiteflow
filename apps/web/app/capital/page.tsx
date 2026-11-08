@@ -4,7 +4,11 @@ import type { Metadata } from "next";
 import { EditorialHeader } from "@/components/gateway/Frame";
 import { InvestorApp } from "@/components/capital/investor/InvestorApp";
 
-export const metadata: Metadata = { title: "Capital · Whiteflow" };
+export const metadata: Metadata = {
+  title: "Capital",
+  description: "Each offer is a shop's cash advance or an unpaid invoice. You pay USDT now and are paid back from the shop's sales, or when the invoice is paid.",
+  alternates: { canonical: "/capital" },
+};
 
 export default function CapitalPage() {
   return (

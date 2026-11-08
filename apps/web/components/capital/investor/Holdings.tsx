@@ -36,7 +36,7 @@ export function Holdings({ state, connect }: ScreenProps) {
     const wrong = state.phase === "wrong-network";
     return (
       <div className={`${card} text-sm`}>
-        <p>{wrong ? "Your wallet is on another network. Switch it to Whitechain Testnet to see your claims." : "Connect your wallet to see the claims it holds and what you've been paid back."}</p>
+        <p>{wrong ? "Your wallet is on another network. Switch it to Whitechain testnet to see your claims." : "Connect your wallet to see the claims it holds and what you've been paid back."}</p>
         <Button className="h-11 justify-self-start px-5 text-sm" onClick={connect}>
           {wrong ? "Switch network" : "Connect wallet"}
         </Button>

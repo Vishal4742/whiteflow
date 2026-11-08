@@ -115,7 +115,7 @@ function NewVoucher() {
           <input name="min" inputMode="decimal" autoComplete="off" placeholder="20.00" className={`${field} tabular-nums`} />
         </label>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:col-span-2 xl:col-span-3">
-          <Button type="submit" aria-disabled={busy}>
+          <Button size="md" type="submit" aria-disabled={busy}>
             {busy ? "Creating…" : "Create code"}
           </Button>
           <p className="text-xs text-ink-muted">Customers enter it when they pay one of your links or pages. One code per order.</p>
@@ -127,7 +127,7 @@ function NewVoucher() {
         </p>
       )}
       {created && (
-        <p role="status" className="rounded-[16px] border border-hairline bg-accent-soft p-4 text-sm">
+        <p role="status" className="rounded-card border border-hairline bg-accent-soft p-4 text-sm">
           <span className="font-mono font-medium">{created}</span> is ready. Share it with your customers.
         </p>
       )}
@@ -141,19 +141,19 @@ function VoucherTicket({ v }: { v: VoucherRow }) {
     <li className="grid min-w-0 content-start gap-2">
       <div className={`relative grid grid-cols-[minmax(0,1fr)_104px] overflow-hidden rounded-[22px] ${notches} ${live ? "bg-scene-dot text-white" : "border border-dashed border-ink-muted/40 bg-surface-sunk text-ink-muted"}`}>
         <div className="grid min-w-0 content-start gap-1 p-5">
-          <span className="eyebrow opacity-80">{STATUS[v.status]}</span>
+          <span className="eyebrow">{STATUS[v.status]}</span>
           <h3 className="font-mono text-[28px] leading-tight font-medium tracking-[0.02em] break-all">{v.code}</h3>
           <p className="text-sm">
             {discountText(v)}
             {v.min_amount && ` · orders from ${amountText(v.min_amount)} USDT`}
           </p>
-          <p className="text-sm opacity-85">
+          <p className="text-sm">
             {v.status === "expired" ? "Ended" : "Ends"} {v.expiresText}
           </p>
         </div>
         <div className={`grid place-content-center border-l-2 border-dashed px-2 text-center ${live ? "border-white/40" : "border-ink-muted/30"}`}>
           <b className="text-[30px] leading-none font-medium tabular-nums">{v.times_redeemed}</b>
-          <span className="eyebrow mt-1 opacity-80">of {v.max_redemptions} used</span>
+          <span className="eyebrow mt-1">of {v.max_redemptions} used</span>
         </div>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-x-4 px-1 text-sm">
@@ -171,7 +171,7 @@ function ArkivKey({ v }: { v: VoucherRow }) {
   if (!key) return <span className="inline-flex min-h-11 items-center text-ink-muted">Not on Arkiv</span>;
   return (
     <span className="flex min-w-0 items-center gap-2">
-      <span className="text-ink-muted">Arkiv entity</span>
+      <span className="text-ink-muted">Public record on Arkiv</span>
       <span className="data" title={key}>
         {key.slice(0, 8)}…{key.slice(-6)}
       </span>
@@ -203,7 +203,7 @@ function Publish({ v }: { v: Voucher }) {
     <div className="grid justify-items-start">
       <span className="flex flex-wrap items-center gap-x-2">
         <span className="text-ink-muted">Not on Arkiv</span>
-        <Button variant="quiet" className="whitespace-nowrap" onClick={publish} aria-disabled={busy}>
+        <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={publish} aria-disabled={busy}>
           {busy ? "Publishing…" : "Publish to Arkiv"}
         </Button>
       </span>
@@ -241,15 +241,15 @@ function Deactivate({ v }: { v: Voucher }) {
       {confirming ? (
         <span role="group" aria-label={`Deactivate ${v.code}?`} className="flex flex-wrap items-center justify-end gap-x-2">
           <span className="whitespace-nowrap">Stop {v.code} now?</span>
-          <Button variant="quiet" className="whitespace-nowrap" onClick={deactivate} aria-disabled={busy}>
+          <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={deactivate} aria-disabled={busy}>
             {busy ? "Deactivating…" : "Yes, deactivate"}
           </Button>
-          <Button variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
+          <Button size="md" variant="quiet" className="whitespace-nowrap" onClick={() => setConfirming(false)} aria-disabled={busy}>
             Keep it
           </Button>
         </span>
       ) : (
-        <Button variant="quiet" onClick={() => setConfirming(true)}>
+        <Button size="md" variant="quiet" onClick={() => setConfirming(true)}>
           Deactivate
         </Button>
       )}

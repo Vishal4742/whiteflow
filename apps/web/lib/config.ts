@@ -39,6 +39,9 @@ export function keyFingerprint(apiKey: string): string {
 
 /** The gateway's public address for the /docs snippets: PUBLIC_ORIGIN when it is set to an http(s) URL (behind a CDN or
  *  proxy the request's own Host isn't ours to trust, security review 006 F5), else `fallback`, read from the request. */
+/** The production site: metadataBase, canonical URLs, robots.txt and the sitemap all name it. */
+export const SITE = "https://whiteflow.org";
+
 export function publicOrigin(fallback: string): string {
   const configured = process.env.PUBLIC_ORIGIN;
   if (!configured || !URL.canParse(configured)) return fallback;

@@ -2,6 +2,7 @@
 
 // Phase 1 rail proofs (DEP-6, DEP-3), moved to /proofs. Internal page;
 // Phase 2 replaces it with the checkout and the merchant dashboard.
+import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/Button";
 import { DitherScene } from "@/components/DitherScene";
@@ -50,13 +51,13 @@ function useProof(run: () => Promise<string>) {
 const readBlock = async () => {
   const client = await getChainClient();
   const block = await client.getBlockNumber();
-  return `Block ${block.toLocaleString("en-US")} on chain 1874, via ${TRANSPORT_LABEL}`;
+  return `Block ${block.toLocaleString("en-US")} on Whitechain testnet, via ${TRANSPORT_LABEL}`;
 };
 
 const signProof = async () => {
   const { address, valid } = await proveTypedDataSigning();
   if (!valid) throw new Error("Signature did not verify");
-  return `Guest wallet ${address.slice(0, 6)}…${address.slice(-4)} signed and verified typed data for chain 1874`;
+  return `Guest wallet ${address.slice(0, 6)}…${address.slice(-4)} signed a payment message and it checked out`;
 };
 
 /** Mounted only while a proof runs, so it restarts from 0 on every run. */
@@ -81,17 +82,17 @@ function StatusPill({ proof }: { proof: Proof }) {
 
 interface ProofCardProps {
   title: string;
-  requirement: string;
+  step: string;
   runningText: string;
   proof: Proof;
   action: ReactNode;
 }
 
-function ProofCard({ title, requirement, runningText, proof, action }: ProofCardProps) {
+function ProofCard({ title, step, runningText, proof, action }: ProofCardProps) {
   return (
     <section className="grid content-start gap-4 rounded-md border border-hairline bg-surface p-6 shadow-card">
       <div className="flex items-center justify-between gap-4">
-        <span className="label text-ink-muted">{requirement}</span>
+        <span className="label text-ink-muted">{step}</span>
         <StatusPill proof={proof} />
       </div>
       <h2 className="title">{title}</h2>
@@ -114,18 +115,19 @@ export default function RailProofs() {
   const [sign, retrySign] = useProof(signProof);
   const reading = read.state === "running";
   return (
-    <main>
+    <main id="main">
       <section className="relative overflow-hidden bg-scene-night text-glass-ink">
         <DitherScene />
         {/* Night wash behind the text so it keeps AA contrast over lit dots; the moon side stays clear. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-to-r from-scene-night from-25% via-scene-night/70 via-50% to-transparent to-75%" />
         <div className="relative mx-auto max-w-5xl px-4 pt-6 pb-24">
           <header className="flex items-center justify-between gap-4">
-            <span className="title inline-flex items-center gap-2 whitespace-nowrap">
+            <Link href="/" className="title inline-flex min-h-11 items-center gap-2 whitespace-nowrap">
               <WhiteflowMark />
-              Whiteflow
-            </span>
-            <span className="data hidden sm:inline">Phase 1 · rail proofs</span>
+              <span>
+                White<span className="text-accent-night">flow</span>
+              </span>
+            </Link>
           </header>
           <h1 className="display-xl mt-20 max-w-xl text-balance">
             Private reads.
@@ -141,7 +143,7 @@ export default function RailProofs() {
       <div className="relative mx-auto -mt-12 grid max-w-5xl gap-6 px-4 pb-16 md:grid-cols-2">
         <ProofCard
           title="Private chain read"
-          requirement="DEP-6"
+          step="Check 1"
           runningText="Connecting privately… the first private read can take one to two minutes."
           proof={read}
           action={
@@ -153,7 +155,7 @@ export default function RailProofs() {
         />
         <ProofCard
           title="Guest wallet signature"
-          requirement="DEP-3"
+          step="Check 2"
           runningText="Signing…"
           proof={sign}
           action={<HoldButton label="Hold to sign again" busyLabel="Signing" doneLabel="Signed" onConfirm={retrySign} />}

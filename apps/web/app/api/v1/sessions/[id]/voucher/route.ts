@@ -11,7 +11,8 @@ import { getSession, isInFlight, type Session } from "../../../../../../lib/sess
 import { plainUsdt } from "../../../../../../lib/usdt.ts";
 
 type Params = { params: Promise<{ id: string }> };
-const CHANGES_PER_MINUTE = 10; // per IP and checkout: enough to fix a typo, too few to guess codes
+const CHANGES_PER_MINUTE = 10; // per IP and merchant, across its checkouts: enough to fix a typo, too few to guess codes
+const MERCHANT_MISSES_PER_MINUTE = 60; // unknown codes across every checkout of one merchant: guesses from many IPs
 const LINKS_ONLY = "Codes work on payment links and pages.";
 const IN_PROGRESS = "Finish or wait for the current payment first.";
 const PAID = "This checkout is already paid.";
@@ -35,7 +36,9 @@ async function checkoutFor(params: Params["params"]): Promise<{ id: string; sess
 
 /** A code may change only on an open checkout: not paid, no payment in flight or pending (F5), not expired (F4). */
 async function assertChangeable(request: Request, { id, session, checkout }: { id: string; session: Session; checkout: Checkout }): Promise<void> {
-  await sharedRateLimit(`voucher:${clientIp(request)}:${id}`, CHANGES_PER_MINUTE, 60_000, "closed");
+  // code review 2026-11-08 F4: per IP and merchant across all its checkouts, so a new checkout buys no more guesses
+  // (codes are per merchant; one NAT's customers of different shops don't share a window)
+  await sharedRateLimit(`voucher:${clientIp(request)}:${checkout.merchant}`, CHANGES_PER_MINUTE, 60_000, "closed");
   if (session.payment || checkout.paidAt !== null) throw new HttpError(410, PAID);
   if ((await isInFlight(id)) || session.pending) throw new HttpError(409, IN_PROGRESS);
   if (Date.now() > session.expiresAt) throw new HttpError(410, EXPIRED);
@@ -58,6 +61,9 @@ export const POST = (request: Request, { params }: Params) =>
     if (!code) throw new HttpError(400, "Enter a code.");
     const result = await applyVoucher(found.checkout.merchant, code, found.id, found.checkout.usdtAmount);
     if (!result.ok) {
+      // only misses count toward the merchant's ceiling, so guessing from many IPs is capped while a real customer
+      // with a real code (or removing one) never is
+      if (result.reason === "That code isn't valid.") await sharedRateLimit(`voucher-misses:${found.checkout.merchant}`, MERCHANT_MISSES_PER_MINUTE, 60_000, "closed");
       const [status, message]: [number, string] = REFUSALS[result.reason] ?? [400, result.reason];
       throw new HttpError(status, message);
     }

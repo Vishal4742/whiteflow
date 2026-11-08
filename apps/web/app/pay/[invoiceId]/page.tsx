@@ -1,5 +1,6 @@
 // Customer invoice page (FR-PAY-3, FR-PAY-7). Server component: our server reads invoices(id) and relayFee() on chain,
 // so the browser makes no chain reads (FR-PRIV-1, SRS 1.1). The total it shows is exactly what the customer will sign.
+import { formatDate } from "@/lib/format";
 import { warmRelayer } from "@/lib/relay";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
@@ -14,15 +15,17 @@ import { invoiceAttempt, invoiceLock } from "@/lib/sessions";
 import { invoiceState, isShopInvoice, pageState } from "@/lib/settle";
 import { formatUsdt } from "@/lib/usdt";
 
+export const metadata = { title: "Pay invoice", robots: { index: false } };
+
 const READ_TRIES = 2; // a customer is waiting (NFR-12): fail fast and say so
 
 // The night and the frame prerender; the invoice streams in (Cache Components needs params inside Suspense).
 // Still scene only: no three.js and no Nym on the pay page (NFR-12 speed budget).
 export default function InvoicePage({ params }: PageProps<"/pay/[invoiceId]">) {
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12 text-glass-ink">
+    <main id="main" className="relative grid min-h-dvh place-items-center overflow-hidden bg-scene-night px-4 py-12 text-glass-ink">
       <StaticScene />
-      <Suspense fallback={<p className="relative rounded-[28px] bg-surface px-8 py-6 text-ink-muted shadow-float">Opening invoice…</p>}>
+      <Suspense fallback={<p className="relative rounded-sheet bg-surface px-8 py-6 text-ink-muted shadow-float">Opening invoice…</p>}>
         <InvoiceLoader params={params} />
       </Suspense>
     </main>
@@ -31,7 +34,7 @@ export default function InvoicePage({ params }: PageProps<"/pay/[invoiceId]">) {
 
 function Notice({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section role="status" className="relative grid w-full max-w-[420px] gap-3 rounded-[28px] bg-surface p-8 text-ink shadow-float">
+    <section role="status" className="relative grid w-full max-w-[420px] gap-3 rounded-sheet bg-surface p-8 text-ink shadow-float">
       <span className="label text-ink-muted">Invoice</span>
       <h1 className="title">{title}</h1>
       <p className="text-sm text-ink-muted">{children}</p>
@@ -76,7 +79,7 @@ async function InvoiceLoader({ params }: Pick<PageProps<"/pay/[invoiceId]">, "pa
       invoiceId={invoiceId}
       merchantName={shop.merchantName}
       verified={merchantVerified(shop.merchant)}
-      dueText={new Date(Number(invoice.dueDate) * 1000).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" })}
+      dueText={formatDate(Number(invoice.dueDate) * 1000)}
       invoiceText={formatUsdt(invoice.amount)}
       paidSoFarText={invoice.paid > 0n ? formatUsdt(invoice.paid) : null}
       owedText={formatUsdt(owed)}

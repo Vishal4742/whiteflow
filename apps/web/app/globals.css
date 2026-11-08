@@ -15,6 +15,7 @@
   --color-on-accent: var(--on-accent);
   --color-scene-night: var(--scene-night);
   --color-scene-dot: var(--scene-dot);
+  --color-accent-night: var(--accent-night);
   --color-glass-fill: var(--glass-fill);
   --color-glass-edge: var(--glass-edge);
   --color-glass-ink: var(--glass-ink);
@@ -25,6 +26,9 @@
   --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
   --radius-pill: var(--radius-pill);
+  --radius-field: var(--radius-sm); /* inputs, small chips: 8px */
+  --radius-card: var(--radius-md); /* cards and panels: 16px */
+  --radius-sheet: var(--radius-lg); /* sheets and large surfaces: 28px */
   --shadow-card: var(--shadow-card);
   --shadow-float: var(--shadow-float);
   --shadow-glow: var(--shadow-glow);

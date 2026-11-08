@@ -6,6 +6,9 @@
 // Styles are local on purpose: components/gateway/Frame.tsx renders this panel, so importing its tokens would be a cycle.
 import { useCallback, useEffect, useState } from "react";
 import { createWalletClient, custom, type EIP1193Provider } from "viem";
+import { buttonClasses } from "@/components/Button";
+import { SetupSteps } from "@/components/ui/SetupSteps";
+import { shortAddress as short } from "@/lib/format";
 
 type Role = "owner" | "operator" | "viewer";
 interface Status {
@@ -14,12 +17,9 @@ interface Status {
 }
 type View = { kind: "loading" } | { kind: "signed-out" } | { kind: "down"; problem: string } | { kind: "ready"; status: Status };
 
-const primary =
-  "inline-flex h-11 cursor-pointer items-center justify-center rounded-pill bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover aria-disabled:cursor-not-allowed aria-disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const secondary =
-  "inline-flex h-11 cursor-pointer items-center justify-center rounded-pill border border-current px-5 text-sm font-medium text-accent hover:bg-accent-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const primary = buttonClasses("primary", "cursor-pointer", "md");
+const secondary = buttonClasses("outline", "cursor-pointer", "md");
 const ROLE_LABEL: Record<Role, string> = { owner: "Owner", operator: "Operator", viewer: "Viewer" };
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const USER_REJECTED = 4001; // EIP-1193
 const REQUEST_PENDING = -32002; // MetaMask: a request of this kind is already open
 
@@ -110,7 +110,8 @@ export function LegacyAccess() {
   if (view.kind === "signed-out") {
     return (
       <div className="grid gap-3">
-        <p className="text-sm text-ink-muted">Sign in to Whiteflow with your email or wallet. If you used this dashboard with a merchant wallet before, you&apos;ll link it next.</p>
+        <SetupSteps current={1} />
+        <p className="text-sm text-ink-muted">Sign in with your email or a wallet.</p>
         {/* a full load on purpose: /sign-in sends its own CSP (with Privy) */}
         <a href="/sign-in" className={primary}>
           Sign in to Whiteflow
@@ -132,7 +133,8 @@ export function LegacyAccess() {
   if (!workspace) {
     return (
       <div className="grid gap-3">
-        <p className="text-sm text-ink-muted">You&apos;re signed in. Create your workspace first, then link your merchant wallet to it.</p>
+        <SetupSteps current={2} />
+        <p className="text-sm text-ink-muted">You&apos;re signed in. Now give your workspace a name.</p>
         <a href="/merchant/settings" className={primary}>
           Create your workspace
         </a>
@@ -142,8 +144,9 @@ export function LegacyAccess() {
   if (linked) {
     return (
       <div className="grid gap-3">
+        <SetupSteps current={4} />
         <p className="text-sm text-ink-muted">
-          {workspace.displayName} is linked to <span className="font-mono">{short(linked)}</span>.
+          You&apos;re all set: {workspace.displayName} is linked to <span className="font-mono">{short(linked)}</span>.
         </p>
         <button type="button" className={primary} onClick={() => window.location.reload()}>
           Open the dashboard
@@ -160,9 +163,9 @@ export function LegacyAccess() {
   }
   return (
     <div className="grid gap-3">
+      <SetupSteps current={3} />
       <p className="text-sm text-ink-muted">
-        Used this dashboard with a merchant wallet before? Link that wallet to {workspace.displayName}: its links, pages, vouchers, keys, webhooks and
-        payments then belong to this workspace, managed by role. You sign one message. There&apos;s no transaction and no funds move.
+        Link the wallet that receives your payments to {workspace.displayName}. One signature: no transaction, no fee.
       </p>
       <button type="button" className={primary} aria-disabled={busy} onClick={() => void link()}>
         {busy ? "Linking…" : "Link merchant wallet"}

@@ -1,6 +1,7 @@
 // Developers (FR-GW-6, FR-GW-7) in the dashboard Shell: API keys and webhooks. Behind sign-in. The lists are read on
 // our server straight from the gateway's own modules (claude-contracts' backend is on main), never with a key or a
 // signing secret in them, so this page's HTML and RSC payload can't carry one.
+import { formatDateTime, formatTime } from "@/lib/format";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Shell } from "@/components/dashboard/Shell";
@@ -14,9 +15,11 @@ import { currentWorkspace } from "@/lib/merchant-session";
 import { keyJson, listKeys } from "@/lib/server/keys";
 import { deliveredEvents, listWebhooks } from "@/lib/server/webhooks";
 
-const ist = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+export const metadata = { title: "API keys and webhooks" };
+
+const ist = (iso: string) => formatDateTime(iso);
 /** A retry is at most 30 minutes away: the time is enough. */
-const istTime = (iso: string) => new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+const istTime = (iso: string) => formatTime(iso);
 
 const header = (
   <EditorialHeader label="Developers" lede="Keys for your server and the pay button, and the endpoints we tell when a payment succeeds or is refunded. Test mode: test USDT only.">

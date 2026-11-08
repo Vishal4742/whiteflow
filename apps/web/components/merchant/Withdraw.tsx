@@ -9,6 +9,7 @@ import type { Address, Hex } from "viem";
 import { Button } from "@/components/Button";
 import { card, field, textLink } from "@/components/gateway/Frame";
 import { formatWbt } from "@/lib/dashboard";
+import { shortAddress } from "@/lib/format";
 import { connectMerchant, type MerchantWallet } from "@/lib/merchant-wallet";
 import { EXPLORER, formatUsdt, plainUsdt } from "@/lib/usdt";
 import { MERCHANT_PAY, NOT_THROUGH, UNCONFIRMED, checkAmount, checkDestination, quoteWithdraw, sendStatus, withdraw, withdrawError } from "@/lib/withdraw";
@@ -43,8 +44,8 @@ export function Withdraw({ merchant, balance }: WithdrawProps) {
       <p className="max-w-[640px] text-sm text-ink-muted">
         Payments settle into this wallet in the same transaction the customer pays in. Nothing is held by us, so there&apos;s nothing to release or wait for.
       </p>
-      <a href={`${EXPLORER}/address/${merchant}`} target="_blank" rel="noreferrer" className={`${textLink} data break-all`}>
-        {merchant} on the explorer ↗
+      <a href={`${EXPLORER}/address/${merchant}`} target="_blank" rel="noreferrer" className={`${textLink} data`}>
+        {shortAddress(merchant)} on the explorer ↗
       </a>
       {/* always mounted, so a sent or pending withdraw stays on screen when the refresh reads 0 or nothing (033 M1) */}
       <WithdrawForm merchant={merchant} balance={units} />
@@ -147,13 +148,13 @@ function WithdrawForm({ merchant, balance }: { merchant: Address; balance: bigin
     return (
       <div role="status" className="grid gap-2">
         <p className="text-sm text-ink">
-          Sent {formatUsdt(sent.amount)} USDT to <span className="data break-all">{sent.to}</span>.
+          Sent {formatUsdt(sent.amount)} USDT to <span className="data">{shortAddress(sent.to)}</span>.
         </p>
         <div className="flex flex-wrap items-center gap-2">
           <a href={txLink(sent.hash)} target="_blank" rel="noreferrer" className={textLink}>
             View transaction ↗
           </a>
-          <Button variant="quiet" onClick={reset}>
+          <Button size="md" variant="quiet" onClick={reset}>
             Withdraw again
           </Button>
         </div>
@@ -189,16 +190,16 @@ function WithdrawForm({ merchant, balance }: { merchant: Address; balance: bigin
         <div className="flex flex-wrap items-center gap-2">
           {pending ? (
             error && (
-              <Button onClick={checkAgain} aria-disabled={busy}>
+              <Button size="md" onClick={checkAgain} aria-disabled={busy}>
                 {busy ? "Checking…" : "Check again"}
               </Button>
             )
           ) : (
             <>
-              <Button onClick={send} aria-disabled={busy}>
+              <Button size="md" onClick={send} aria-disabled={busy}>
                 {busy ? "Waiting for your wallet…" : "Send with my wallet"}
               </Button>
-              <Button variant="quiet" onClick={() => setReview(null)} aria-disabled={busy}>
+              <Button size="md" variant="quiet" onClick={() => setReview(null)} aria-disabled={busy}>
                 Back
               </Button>
             </>
@@ -224,7 +225,7 @@ function WithdrawForm({ merchant, balance }: { merchant: Address; balance: bigin
         <p role="status" className="text-sm text-warning">
           Your wallet balance isn&apos;t available right now, so Withdraw is off.
         </p>
-        <Button variant="quiet" onClick={() => router.refresh()}>
+        <Button size="md" variant="quiet" onClick={() => router.refresh()}>
           Try again
         </Button>
       </div>
@@ -279,7 +280,7 @@ function WithdrawForm({ merchant, balance }: { merchant: Address; balance: bigin
             aria-describedby={amountError ? "withdraw-amount-error withdraw-amount-hint" : "withdraw-amount-hint"}
             className={`${field} tabular-nums sm:max-w-[200px]`}
           />
-          <Button
+          <Button size="md"
             variant="quiet"
             className="min-w-11 px-3"
             onClick={() => {
@@ -300,8 +301,8 @@ function WithdrawForm({ merchant, balance }: { merchant: Address; balance: bigin
         )}
       </div>
       <div>
-        <Button type="submit" aria-disabled={busy}>
-          {busy ? "Checking with your wallet…" : "Review withdraw"}
+        <Button size="md" type="submit" aria-disabled={busy}>
+          {busy ? "Checking with your wallet…" : "Review withdrawal"}
         </Button>
       </div>
       {error && (

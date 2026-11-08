@@ -8,6 +8,7 @@ import { PrivyProvider, useIdentityToken, usePrivy } from "@privy-io/react-auth"
 import { useEffect, useRef, useState } from "react";
 import { whitechainTestnet } from "@/lib/privy-config";
 import { clearPrivyStorage } from "@/lib/privy-session";
+import { buttonClasses } from "@/components/Button";
 
 /** PrivyProvider's config for businesses: email or an external wallet, chain 1874 only, embedded wallets off. */
 export function businessPrivyConfig(wcProjectId: string | null) {
@@ -27,10 +28,8 @@ export function businessPrivyConfig(wcProjectId: string | null) {
   };
 }
 
-const primary =
-  "h-11 cursor-pointer rounded-pill bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
-const secondary =
-  "h-11 cursor-pointer rounded-pill border border-current px-5 text-sm font-medium text-accent hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const primary = buttonClasses("primary", "cursor-pointer disabled:cursor-not-allowed disabled:opacity-45", "md");
+const secondary = buttonClasses("outline", "cursor-pointer disabled:cursor-not-allowed disabled:opacity-45", "md");
 
 const NO_IDENTITY_TOKEN =
   "Privy signed you in but didn't return an identity token, so Whiteflow can't confirm your email or wallets. The owner needs to turn on “Return user data in an identity token” in the Privy dashboard.";

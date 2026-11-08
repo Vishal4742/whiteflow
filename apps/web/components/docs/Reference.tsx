@@ -143,9 +143,9 @@ function EndpointPage({ endpoint: e }: { endpoint: Endpoint }) {
     <article aria-label={name} className="grid min-w-0 gap-4 rounded-[20px] border border-hairline p-4 md:p-6">
       <div className="flex flex-wrap items-center gap-2">
         <MethodPill method={e.method} />
-        <h5 className="text-[17px] leading-6 font-medium">
+        <h4 className="text-[17px] leading-6 font-medium">
           <Path path={e.path} />
-        </h5>
+        </h4>
         <AuthChip auth={e.auth} />
       </div>
       <p className="max-w-[70ch] text-sm text-ink-muted">
@@ -197,7 +197,7 @@ function EndpointPage({ endpoint: e }: { endpoint: Endpoint }) {
 function Lifecycle() {
   return (
     <div className="grid min-w-0 gap-4">
-      <h5 className="title">How a checkout&apos;s status moves</h5>
+      <h4 className="title">How a checkout&apos;s status moves</h4>
       <ol className="grid gap-0 sm:grid-cols-4" aria-label="Checkout statuses">
         {CHECKOUT_STATUSES.map((s, i) => (
           <li key={s.status} className="relative grid content-start gap-1 border-hairline py-3 max-sm:border-l max-sm:pl-4 sm:border-t sm:pt-4 sm:pr-4">

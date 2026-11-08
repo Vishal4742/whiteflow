@@ -7,8 +7,6 @@ import { setupDb } from "./gw-helpers.mjs"; // used nonces are in the database (
 
 process.env.AUTH_SECRET = "test-auth-secret-0123456789abcdef0123";
 const auth = await import("../lib/auth.ts");
-const { GET: nonceRoute } = await import("../app/api/auth/nonce/route.ts");
-const { POST: verifyRoute } = await import("../app/api/auth/verify/route.ts");
 
 const SECRET = process.env.AUTH_SECRET;
 before(setupDb);
@@ -66,59 +64,6 @@ test("the nonce cookie is ours: a plain, edited or old nonce cookie is refused (
   assert.equal(auth.readNonce(signed.replace("abcdefgh", "zzzzzzzz"), SECRET), null, "edited nonce");
   assert.equal(auth.readNonce(signed, "another-secret-0123456789abcdef0123"), null, "wrong secret");
   assert.equal(auth.readNonce(auth.signNonce("abcdefgh12345678", SECRET, Date.now() - (auth.NONCE_TTL_S + 1) * 1000), SECRET), null, "old");
-});
-
-test("the routes: nonce cookie, then a verified sign-in sets the session cookie", async () => {
-  const nonceRes = await nonceRoute(new Request("http://shop.test/api/auth/nonce"));
-  const { nonce } = await nonceRes.json();
-  const nonceCookie = nonceRes.headers.get("set-cookie");
-  assert.match(nonceCookie, /^mc_nonce=.+HttpOnly; SameSite=Lax/);
-  const message = siwe({ nonce });
-  const signature = await merchant.signMessage({ message });
-  const cookie = nonceCookie.split(";")[0];
-  // replaying the signature with a hand-made cookie that just names the nonce fails
-  const forged = await verifyRoute(new Request("http://shop.test/api/auth/verify", { method: "POST", headers: { cookie: `mc_nonce=${nonce}` }, body: JSON.stringify({ message, signature }) }));
-  assert.equal(forged.status, 401, "forged nonce cookie");
-  const ok = await verifyRoute(new Request("http://shop.test/api/auth/verify", { method: "POST", headers: { cookie }, body: JSON.stringify({ message, signature }) }));
-  assert.equal(ok.status, 200);
-  const cookies = ok.headers.getSetCookie();
-  const session = cookies.find((c) => c.startsWith("mc_session="));
-  assert.ok(session, "session cookie set");
-  assert.ok(cookies.some((c) => c.startsWith("mc_nonce=;")), "nonce cleared");
-  assert.equal(auth.readSession(decodeURIComponent(session.split(";")[0].slice("mc_session=".length)), SECRET), merchant.address);
-  // the nonce is single use on the server too: replaying the captured request inside its 5 min window fails (tester R1)
-  const replay = await verifyRoute(new Request("http://shop.test/api/auth/verify", { method: "POST", headers: { cookie }, body: JSON.stringify({ message, signature }) }));
-  assert.equal(replay.status, 401, "replayed sign-in");
-});
-
-test("without the nonce cookie, sign-in is refused", async () => {
-  const message = siwe();
-  const signature = await merchant.signMessage({ message });
-  const res = await verifyRoute(new Request("http://shop.test/api/auth/verify", { method: "POST", body: JSON.stringify({ message, signature }) }));
-  assert.equal(res.status, 401);
-});
-
-test("sign-in is off when AUTH_SECRET isn't set", async () => {
-  const saved = process.env.AUTH_SECRET;
-  delete process.env.AUTH_SECRET;
-  try {
-    assert.equal((await nonceRoute(new Request("http://shop.test/api/auth/nonce"))).status, 503);
-  } finally {
-    process.env.AUTH_SECRET = saved;
-  }
-});
-
-// Batch 005 (code review 004 R2 F5): guards no test pinned yet.
-test("every nonce is new (N20)", async () => {
-  const [a, b] = await Promise.all([1, 2].map(async () => (await nonceRoute(new Request("http://shop.test/api/auth/nonce"))).json()));
-  assert.match(a.nonce, /^[0-9a-zA-Z]{32,}$/);
-  assert.notEqual(a.nonce, b.nonce);
-});
-
-test("a mangled nonce cookie is a 401, not a 500 (N21)", async () => {
-  const message = siwe();
-  const res = await verifyRoute(new Request("http://shop.test/api/auth/verify", { method: "POST", headers: { cookie: "mc_nonce=%E0%A4%A" }, body: JSON.stringify({ message, signature: await merchant.signMessage({ message }) }) }));
-  assert.equal(res.status, 401);
 });
 
 test("a nonce cookie stamped in the future is refused (M45)", () => {

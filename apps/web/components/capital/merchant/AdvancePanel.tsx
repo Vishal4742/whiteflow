@@ -41,7 +41,7 @@ export function AdvancePanel({ merchant, advance, offers }: AdvancePanelProps) {
           <p>
             <span className="font-medium">Offer {state.claimId}</span>{" "}
             {state.kind === "open" ? (
-              <>is listed and waiting for investors{state.offer && <> until {offers.find((o) => o.id === state.claimId)?.deadlineText} IST</>}.</>
+              <>is listed and waiting for investors{state.offer && <> until {offers.find((o) => o.id === state.claimId)?.deadlineText}</>}.</>
             ) : (
               <>wasn&apos;t funded before its deadline. Cancel it to list a new one.</>
             )}
@@ -148,7 +148,7 @@ function AdvanceForm({ listing }: { listing: ReturnType<typeof useListing> }) {
         {preview.ok ? advanceCostLine(preview.value.principal, preview.value.cap, preview.value.holdbackBps) : <span className="text-ink-muted">Enter the amounts to see what the advance costs.</span>}
       </p>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button type="submit" aria-disabled={busy(listing.state)}>
+        <Button size="md" type="submit" aria-disabled={busy(listing.state)}>
           {busy(listing.state) ? "Listing…" : "List the advance"}
         </Button>
         <p className="max-w-[60ch] text-xs text-ink-muted">Your wallet sends the listing and pays about 0.0007 WBT. Nothing moves until investors fund it. {WBT_HINT}</p>

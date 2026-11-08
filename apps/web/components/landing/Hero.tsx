@@ -14,10 +14,12 @@ export function Nav() {
       <div className="wrap">
         <span className="lp-word inline-flex items-center gap-2">
           <WhiteflowMark />
-          Whiteflow
+          <span>
+            White<span className="text-accent-night">flow</span>
+          </span>
         </span>
         <nav className="links" aria-label="Product">
-          <a href="#accept">Invoices &amp; Payments</a>
+          <a href="#accept">Invoices &amp; payments</a>
           <a href="#settle">Settlement</a>
           <a href="#grow">Vouchers &amp; FX</a>
           <a href="#dev">Developers</a>

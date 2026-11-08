@@ -87,7 +87,8 @@ To check without the GitHub attestations API, add `--bundle whiteflow.mcpb.prove
 The npm package `whiteflow-mcp` is the same bundled stdio server, so any client runs it with `npx -y whiteflow-mcp`.
 `server.json` lists it in the official MCP Registry as `io.github.Vishal4742/whiteflow`; the registry checks that the
 npm package's `mcpName` matches, which `scripts/npm-package.mjs` writes. Bump the version in `package.json` and both
-places in `server.json` together (the script refuses a mismatch).
+places in `server.json` together (the script refuses a mismatch), then the pinned `whiteflow-mcp@<version>` in
+`apps/web/components/McpInstall.tsx` and the root README (a web test fails until they match).
 
 ```bash
 cd packages/mcp

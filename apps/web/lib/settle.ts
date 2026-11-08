@@ -4,13 +4,15 @@
 // - otherwise it stays pending ("Don't pay again").
 // A link or page attempt carries the price it claimed (pending.amount): the chain is read for exactly that, and a dead
 // attempt's frozen voucher hold is released (batch-009 security review F1 iii, F3).
+import { after } from "next/server.js"; // the .js path resolves under Node's test runner too
 import { announcePaid } from "./announce-paid.ts";
+import { payConfig } from "./config.ts";
 import type { Address } from "viem";
 import { saleSettled, type Invoice } from "./onchain.ts";
 import { checkoutOf, type Checkout } from "./server/checkouts.ts";
 import { DbUnavailable } from "./server/db.ts";
 import { releaseHold } from "./server/vouchers.ts";
-import { claimPayment, clearInvoicePending, clearPending, getSession, invoiceAttempt, isInFlight, recordPayment, releasePayment, samePending, type Session } from "./sessions.ts";
+import { claimPayment, clearInvoicePending, clearPending, getSession, invoiceAttempt, isInFlight, pendingSessionIds, recordPayment, releasePayment, samePending, type Session } from "./sessions.ts";
 
 // our server clock vs chain time: wait this long past validBefore before calling an approval dead
 const CLOCK_MARGIN_S = 60n;
@@ -99,4 +101,47 @@ export function isShopInvoice(invoice: Invoice, shop: Address | undefined): bool
  *  pending, never offering the button or "ask for a new one" (security review 004 R2 F1). `lock` is the in-flight key. */
 export async function pageState<T extends string>(state: T, lock: string): Promise<T | "pending"> {
   return state === "open" && (await isInFlight(lock)) ? "pending" : state;
+}
+
+// Code review 2026-11-08 F1: an attempt with an unknown outcome (a relayer timeout or 5xx, or a confirming read that
+// failed) was settled only when someone reopened that checkout. Until then a payment that landed was never recorded or
+// announced, and a dead attempt kept its link or voucher held. The sweep settles them from the chain, a few at a time.
+const SETTLE_EVERY_MS = 30_000;
+const SETTLE_BATCH = 10; // ponytail: oldest first, 10 per run; unknown outcomes are rare. Page through them if that changes
+let lastSettleAt = Number.NEGATIVE_INFINITY;
+
+/** Settles up to SETTLE_BATCH pending checkouts, oldest first; the number it looked at. Each is settled without the
+ *  in-flight lock (settlePending's own rule): a dead link or page attempt is reopened only if no payment is in flight. */
+export async function settleStale(merchantPay: Address): Promise<number> {
+  const ids = await pendingSessionIds(SETTLE_BATCH);
+  for (const id of ids) {
+    try {
+      const session = await getSession(id);
+      if (session) await settlePending(session, merchantPay);
+    } catch (err) {
+      console.error(`checkout ${id}: sweep failed (${err instanceof Error ? err.name : "error"})`); // the next run retries it
+    }
+  }
+  return ids.length;
+}
+
+/** Runs settleStale after this response, at most once per instance per SETTLE_EVERY_MS, on the same checkout traffic as
+ *  webhook retries (dispatchSoon). Outside a request after() throws and nothing runs. Never throws or slows the response. */
+export function settleSoon(schedule: (task: () => Promise<void>) => void = after, now = Date.now()): boolean {
+  if (now >= lastSettleAt && now - lastSettleAt < SETTLE_EVERY_MS) return false;
+  const pay = payConfig();
+  if (!pay) return false;
+  try {
+    schedule(async () => {
+      try {
+        await settleStale(pay.merchantPay);
+      } catch (err) {
+        console.error(`pending sweep failed (${err instanceof Error ? err.name : typeof err})`);
+      }
+    });
+  } catch {
+    return false; // outside a request: no response to run after
+  }
+  lastSettleAt = now;
+  return true;
 }

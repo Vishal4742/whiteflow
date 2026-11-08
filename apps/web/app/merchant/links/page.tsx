@@ -1,5 +1,6 @@
 // Payment links (FR-GW-1, FR-GW-3) in the dashboard Shell. Behind sign-in; our server reads the signed-in merchant's
 // list from the gateway's own module (claude-contracts' lib/server/links.ts).
+import { formatDateTime } from "@/lib/format";
 import { connection } from "next/server";
 import { headers } from "next/headers";
 import { Suspense } from "react";
@@ -11,7 +12,9 @@ import { publicOrigin } from "@/lib/config";
 import { merchantLinks, originOf, readFailure } from "@/lib/gateway-server";
 import { currentMerchant } from "@/lib/merchant-session";
 
-const ist = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+export const metadata = { title: "Payment links" };
+
+const ist = (iso: string) => formatDateTime(iso);
 
 const header = (
   <EditorialHeader label="Payment links" lede="An amount, a currency and a line about what it's for. Send it in any chat, or show its QR code at the counter. It works once, or every time.">

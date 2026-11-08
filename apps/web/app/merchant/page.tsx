@@ -1,5 +1,6 @@
 // Whiteflow Business Workspace Home (/merchant):
 // Non-custodial settlement, verified metrics, quick actions, invoices, payments and sponsored relayer telemetry.
+import { formatDate, formatDateTime } from "@/lib/format";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import type { Address } from "viem";
@@ -27,6 +28,8 @@ import { linkStatus, listLinks } from "@/lib/server/links";
 import { listPayments } from "@/lib/sessions";
 import { EXPLORER, formatUsdt } from "@/lib/usdt";
 
+export const metadata = { title: "Overview" };
+
 export default function MerchantPage() {
   return (
     // the sidebar paints at once, so switching to Overview never drops the frame while its data streams in (NFR-13)
@@ -43,15 +46,9 @@ export default function MerchantPage() {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const card = "grid min-w-0 content-start gap-4 rounded-[16px] border border-hairline bg-surface p-5 md:px-6 shadow-card";
-const istTime = (ms: number) => new Date(ms).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
+const card = "grid min-w-0 content-start gap-4 rounded-card border border-hairline bg-surface p-5 md:px-6 shadow-card";
 const istDate = (ms: number, options: Intl.DateTimeFormatOptions) => new Date(ms).toLocaleDateString("en-GB", { ...options, timeZone: "Asia/Kolkata" });
 
-/** A relayer figure in WBT, 4 decimals, or "—". */
-function wbt(value: string | null): string {
-  const n = value === null ? Number.NaN : Number.parseFloat(value);
-  return Number.isFinite(n) ? `${n.toFixed(4)} WBT` : "—";
-}
 
 /** This invoice's acks, only those signed for its own terms (security 047 L1), or null. */
 const ackOf = (acks: Map<string, InvoiceAck[]> | null, invoice: Invoice) => ackView(acks?.get(invoice.id.toString()) ?? [], invoice);
@@ -66,7 +63,7 @@ function invoiceRows(invoices: Invoice[], logs: PaidLog[], acks: Map<string, Inv
           {
             id: invoice.id.toString(),
             amountText: formatUsdt(invoice.amount),
-            dueText: new Date(Number(invoice.dueDate) * 1000).toLocaleDateString("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" }),
+            dueText: formatDate(Number(invoice.dueDate) * 1000),
             status: invoice.status,
             paidText: invoice.status === "open" && invoice.paid > 0n ? formatUsdt(invoice.paid) : null,
             receiptId: invoice.status === "paid" ? (paidBy.get(invoice.id) ?? null) : null,
@@ -164,7 +161,7 @@ function home(payments: Confirmed[], fee: bigint | null, invoices: Invoice[] | n
     };
   };
 
-  const when = `${istDate(now, { weekday: "short", day: "numeric", month: "short" })} · ${istTime(now)} IST`;
+  const when = formatDateTime(now);
   return { tiles, ranges: [range(7), range(30)], when, today: new Date(now).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) };
 }
 
@@ -257,14 +254,14 @@ async function Dashboard() {
         <GetStarted steps={steps} />
 
         {/* Financial Metrics Row */}
-        <section aria-label="Financial overview" className="grid grid-cols-2 gap-px overflow-hidden rounded-[16px] border border-hairline bg-hairline md:grid-cols-3 xl:grid-cols-6 shadow-card">
+        <section aria-label="Financial overview" className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-hairline bg-hairline md:grid-cols-3 xl:grid-cols-6 shadow-card">
           {tiles.map((tile) => (
             <div key={tile.label} className="grid content-start gap-1 bg-surface p-4 md:p-[18px]">
               <h2 className="eyebrow text-ink-muted">{tile.label}</h2>
               <b className="text-[26px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-ink">
                 <Reveal text={tile.value} />
               </b>
-              <span className={`text-xs ${tile.tone === "up" ? "text-positive" : tile.tone === "down" ? "text-warning" : tile.tone === "positive" ? "text-emerald-600" : "text-ink-muted"}`}>
+              <span className={`text-xs ${tile.tone === "up" ? "text-positive" : tile.tone === "down" ? "text-warning" : tile.tone === "positive" ? "text-positive" : "text-ink-muted"}`}>
                 {tile.sub}
               </span>
             </div>
@@ -344,7 +341,7 @@ async function Dashboard() {
         )}
 
         {/* Latest Payments Table */}
-        <section className="rounded-[16px] border border-hairline bg-surface shadow-card overflow-hidden" aria-labelledby="payments-heading">
+        <section className="rounded-card border border-hairline bg-surface shadow-card overflow-hidden" aria-labelledby="payments-heading">
           <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
             <h2 id="payments-heading" className="text-[16px] font-semibold text-ink">
               Latest payments
@@ -381,7 +378,7 @@ async function Dashboard() {
                       ) : (
                         <span className="data font-mono text-xs">{row.label}</span>
                       )}
-                      <span className="data text-xs text-ink-muted"> · {istTime(row.paidAt)}</span>
+                      <span className="data text-xs text-ink-muted"> · {formatDateTime(row.paidAt)}</span>
                     </span>
                     <span className="tabular-nums font-semibold sm:table-cell sm:px-6 sm:py-3 sm:text-right sm:align-middle">
                       {formatUsdt(row.amount)} <span className="text-xs text-ink-muted font-normal sm:hidden">USDT</span>
@@ -403,38 +400,24 @@ async function Dashboard() {
           )}
         </section>
 
-        {/* Infrastructure & Gas Sponsorship Telemetry */}
+        {/* What a merchant needs from the relayer: are payments going through, and what does each one cost. Its
+            balance and budget are Whiteflow's to watch, not the merchant's. */}
         <section className={card} aria-labelledby="gas-heading">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 id="gas-heading" className="text-sm font-semibold text-ink">
-              Sponsored Relayer &amp; Network Health
+              Network fees
             </h2>
-            <StatusBadge status={health && !health.paused ? "paid" : "warning"} label={health && !health.paused ? "Running" : "Standby"} />
+            <StatusBadge status={health && !health.paused ? "paid" : "warning"} label={health && !health.paused ? "Covered" : "Paused"} />
           </div>
           <p className="text-xs text-ink-muted leading-relaxed">
-            Customers pay zero network gas on Whitechain. The Whiteflow relayer sponsors transaction gas and deducts a transparent {feeText ? `${feeText} USDT` : "nominal"} fee upon settlement.
+            {health && !health.paused
+              ? `Your customers pay no network fee: Whiteflow covers it.${feeText ? ` Each payment carries a ${feeText} USDT fee, taken in the same transaction.` : ""}`
+              : "Payments are paused for a moment while Whiteflow tops up the network fee balance. Nothing is lost; try again shortly."}
           </p>
-          {health ? (
-            <dl className="grid gap-2 text-xs md:grid-cols-4 md:gap-4 pt-1">
-              {[
-                ["Relayer balance", wbt(health.wbt)],
-                ["Gas spent today", wbt(health.gasSpentToday)],
-                ["Budget left today", wbt(health.budgetLeft)],
-                ["Unswapped fees", health.usdtFeesUnswapped ? `${health.usdtFeesUnswapped} USDT` : "0.0000 USDT"],
-              ].map(([term, value]) => (
-                <div key={term} className="flex justify-between gap-3 border-t border-hairline pt-2 md:grid md:justify-start md:gap-0.5">
-                  <dt className="text-ink-muted">{term}</dt>
-                  <dd className="font-mono font-medium text-ink">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p className="text-xs text-warning">{pay ? "Relayer status check pending." : "Relayer not configured on this server."}</p>
-          )}
         </section>
 
         <p className="text-xs text-ink-muted">
-          All payments settle directly to your Whitechain receiving wallet in the settlement transaction (T+0). Whiteflow maintains non-custodial accounting; transaction amounts are customer payments, not a pooled custodial balance.
+          Payments settle straight to your wallet in the same transaction. Whiteflow never holds your money.
         </p>
       </div>
     </Shell>

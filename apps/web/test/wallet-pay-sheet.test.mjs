@@ -36,7 +36,7 @@ test("a short guest: one line first, the address and Copy only under a quiet dis
   assert.ok(line > 0 && line < children && children < details && details < address, "line, then the wallet option, then the disclosure holding the address");
   assert.ok(!/<details[^>]*\bopen\b/.test(guestShort), "the disclosure starts closed");
   assert.match(guestShort, /<CopyButton text=\{address\}/, "Copy copies the full address");
-  assert.match(walletPay, /const shortAddress = \(a: Address\) => `\$\{a\.slice\(0, 6\)\}…\$\{a\.slice\(-4\)\}`/);
+  assert.match(walletPay, /import \{ shortAddress \} from "@\/lib\/format";/, "the site's one address shortener");
 });
 
 test("the short notice's default view keeps FR-PAY-7's words (no sign, gas, wallet, chain, no address)", () => {

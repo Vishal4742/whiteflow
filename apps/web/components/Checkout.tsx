@@ -18,6 +18,7 @@ import { WhiteflowWordmark } from "@/components/WhiteflowLogo";
 import { GuestShort, WalletOption, endWalletSession, loadSigner, useGuestFunds, walletPayer, type WalletVia } from "@/components/WalletPay";
 import { FAILED, errorTone, outcome, type PayAnswer } from "@/lib/outcome";
 import { EXPLORER } from "@/lib/usdt";
+import { SuccessMark } from "@/components/ui/SuccessMark";
 
 // The relayer wants an approval to stay valid at least 30 s (lib/pay.ts), and an approval ends with the checkout: in
 // its last 30 s a checkout can't be paid, so the sheet counts down to that moment.
@@ -38,7 +39,7 @@ interface CheckoutProps {
   /** our server checked this shop: a verified tick after its name (batch 056) */
   verified: boolean;
   reference: string;
-  items: { name: string; qty: number; price: string }[];
+  items: { name: string; qty: number; total: string }[];
   /** What the customer pays now (after any discount code), or paid. */
   amountText: string;
   /** A link or page checkout takes a discount code; null for a shop's own checkout. Server-rendered: the total before
@@ -182,17 +183,19 @@ export function Checkout({ sessionId, merchantName, verified, reference, items, 
     <section className="relative w-full max-w-[420px] rounded-[24px] bg-surface p-7 text-ink shadow-float border border-hairline" aria-live="polite">
       <div className="flex items-center justify-between border-b border-hairline pb-3 mb-4">
         <WhiteflowWordmark className="text-xs" />
-        <span className="eyebrow text-xs text-ink-muted">Whitechain Sepolia</span>
+        <span className="eyebrow text-xs text-ink-muted">Whitechain testnet</span>
       </div>
       {paidId ? (
         <div className="grid gap-4">
-          <h1 className="sr-only">Paid to {merchantName}</h1>
-          <span className="justify-self-start rounded-pill border border-current px-3 py-0.5 text-xs font-medium tracking-wide text-positive">Paid</span>
-          <p className="flex flex-wrap items-baseline gap-2">
-            <span className="amount-xl">{due.amountText}</span>
-            <span className="label text-ink-muted">USDT</span>
-            <span className="text-ink-muted">to {merchantName}</span>
-          </p>
+          <div className="grid justify-items-center gap-2 text-center">
+            <SuccessMark />
+            <h1 className="title">Payment successful</h1>
+            <p className="flex flex-wrap items-baseline justify-center gap-2">
+              <span className="amount-xl">{due.amountText}</span>
+              <span className="label text-ink-muted">USDT</span>
+              <span className="text-ink-muted">to {merchantName}</span>
+            </p>
+          </div>
           <dl className="grid gap-2 border-y border-hairline py-4 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-ink-muted">Receipt</dt>
@@ -252,7 +255,7 @@ export function Checkout({ sessionId, merchantName, verified, reference, items, 
                   <span>
                     {item.qty} × {item.name}
                   </span>
-                  <span className="tabular-nums">{item.price}</span>
+                  <span className="tabular-nums">{item.total}</span>
                 </li>
               ))}
             </ul>

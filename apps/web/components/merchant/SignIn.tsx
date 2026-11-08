@@ -1,7 +1,7 @@
 "use client";
 
 // The merchant's three setup steps on a signed-out dashboard page, each with a live status: (1) a wallet in this
-// browser, (2) Whitechain Testnet added to it (optional for sign-in, needed for invoices and refunds), (3) "Sign in
+// browser, (2) Whitechain testnet added to it (optional for sign-in, needed for invoices and refunds), (3) "Sign in
 // with your wallet" (SIWE): sign one message (free, moves no money) and the server sets a session cookie. Customers
 // never see this; they pay with the guest wallet. Nothing here asks the wallet for anything until a button is pressed.
 import { useRouter } from "next/navigation";
@@ -166,13 +166,13 @@ export function SignIn({ available }: { available: boolean }) {
         )}
       </Step>
 
-      <Step n={2} title="Add Whitechain Testnet" status={onWhitechain ? "Added" : busy === "network" ? "Waiting" : "Not yet"} tone={onWhitechain ? "done" : busy === "network" ? "busy" : "todo"}>
+      <Step n={2} title="Add Whitechain testnet" status={onWhitechain ? "Added" : busy === "network" ? "Waiting" : "Not yet"} tone={onWhitechain ? "done" : busy === "network" ? "busy" : "todo"}>
         <p className={help}>Optional for sign-in. You need it later to send invoices and refunds.</p>
         {onWhitechain ? (
-          <p className="text-sm">Your wallet is on Whitechain Testnet (chain 1874).</p>
+          <p className="text-sm">Your wallet is on Whitechain testnet.</p>
         ) : (
           <button type="button" className={secondary} aria-disabled={!found || busy !== null} onClick={found && busy === null ? addNetwork : undefined}>
-            {busy === "network" ? "Check your wallet…" : "Add Whitechain Testnet"}
+            {busy === "network" ? "Check your wallet…" : "Add Whitechain testnet"}
           </button>
         )}
         {alert(networkError)}
@@ -186,7 +186,7 @@ export function SignIn({ available }: { available: boolean }) {
       >
         <p className={help}>Use the wallet your shop gets paid to. You sign one message. It&apos;s free and moves no money.</p>
         {available ? (
-          <Button onClick={signIn} aria-disabled={!found || busy !== null || signedIn} className="justify-self-start">
+          <Button size="md" onClick={signIn} aria-disabled={!found || busy !== null || signedIn} className="justify-self-start">
             {busy === "sign" ? "Check your wallet…" : signedIn ? "Opening your dashboard…" : "Sign in with your wallet"}
           </Button>
         ) : (
@@ -201,7 +201,7 @@ export function SignIn({ available }: { available: boolean }) {
 export function SignOut() {
   const router = useRouter();
   return (
-    <Button
+    <Button size="md"
       variant="quiet"
       onClick={async () => {
         await fetch("/api/auth/logout", { method: "POST" });

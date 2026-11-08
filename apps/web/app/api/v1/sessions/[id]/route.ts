@@ -7,7 +7,7 @@ import { readPayment } from "../../../../../lib/onchain.ts";
 import { currencyFields, getSession, isInFlight } from "../../../../../lib/sessions.ts";
 import { settlePending } from "../../../../../lib/settle.ts";
 import { announcePaid } from "../../../../../lib/announce-paid.ts";
-import { handle } from "../../../../../lib/server/http.ts";
+import { handle, sharedRateLimit } from "../../../../../lib/server/http.ts";
 import { shopCaller } from "../../../../../lib/shop-auth.ts";
 import { plainUsdt } from "../../../../../lib/usdt.ts";
 
@@ -21,6 +21,10 @@ async function get(request: Request, { params }: { params: Promise<{ id: string 
   const shop = await shopCaller(request);
   if ("error" in shop) return fail(shop.status, shop.error);
   const { id } = await params;
+  // code review 2026-11-08 F3: a paid or pending checkout costs a chain read per poll. Once a second per checkout is the
+  // documented polling pace; the merchant ceiling bounds many checkouts polled at once
+  await sharedRateLimit(`session-poll:${id}`, 60, 60_000, "memory");
+  await sharedRateLimit(`session-poll-merchant:${shop.merchant.toLowerCase()}`, 600, 60_000, "memory");
   const found = await getSession(id);
   // only the caller's own checkouts: links, pages and other keys create sessions for other merchants (security 006 R2-F5)
   if (!found || found.merchant.toLowerCase() !== shop.merchant.toLowerCase()) return fail(404, "No such checkout.");

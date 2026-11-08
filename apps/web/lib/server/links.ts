@@ -24,6 +24,7 @@ import {
   type Currency,
 } from "./http.ts";
 import { QUOTE_TTL_MS, toUsdtUnits, usdRate } from "./quotes.ts";
+import { settleSoon } from "../settle.ts";
 import { dispatchSoon } from "./webhooks.ts";
 import type { Reply } from "./idempotency.ts";
 
@@ -307,6 +308,7 @@ export async function linkPayments(link: Link): Promise<{ session_id: string; pa
 
 export async function linkBySlug(slug: string): Promise<Link | null> {
   dispatchSoon(); // a customer opening a checkout: the steadiest traffic there is, so due webhook retries ride on it
+  settleSoon(); // and pending checkouts get settled from the chain (code review 2026-11-08 F1)
   const rows = await query<LinkRow>(`SELECT ${COLUMNS} FROM app_gw_links WHERE slug = $1`, [slug]);
   return rows.length ? (await withPayments(rows))[0] : null;
 }

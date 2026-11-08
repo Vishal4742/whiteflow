@@ -59,7 +59,7 @@ function Row({ merchant, offer: o }: { merchant: Address; offer: OfferRow }) {
       </span>
       <span className={`${cell} tabular-nums`}>
         {advance ? `${price} USDT now, repay ${face} USDT at ${o.holdback_pct}% of sales` : `${price} USDT now for ${face} USDT at maturity`}
-        {open && <span className="block text-xs text-ink-muted">Open to investors until {o.deadlineText} IST</span>}
+        {open && <span className="block text-xs text-ink-muted">Open to investors until {o.deadlineText}</span>}
         {!advance && <DebtorAck ack={o.debtor_ack} />}
       </span>
       <span className={cell}>
@@ -99,7 +99,7 @@ function PublishAgain({ claimId }: { claimId: string }) {
   return (
     <span className="grid justify-items-start gap-1">
       <span className="text-warning">Not in the offer book yet</span>
-      <Button variant="quiet" className="text-sm" onClick={publish} aria-disabled={blocked}>
+      <Button size="md" variant="quiet" className="text-sm" onClick={publish} aria-disabled={blocked}>
         {blocked ? "Adding it to the offer book…" : "Publish again"}
       </Button>
       {error && (

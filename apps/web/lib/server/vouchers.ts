@@ -55,7 +55,7 @@ export const HOLD_MS = SESSION_TTL_MS + 15 * 60_000;
  *  use (F2) or a single-use link (M3). A paid checkout's frozen hold counts until confirmRedemption counts it. */
 export const FREEZE_MS = 20 * 60_000;
 const BEING_PAID = "This checkout is being paid.";
-const PAID_ONCE = "This payment link has already been paid.";
+export const PAID_ONCE = "This payment link has already been paid.";
 
 type VoucherRow = { id: string; merchant: string; code: string; kind: VoucherKind; value: string; expires_at: string; max_redemptions: number; times_redeemed: number; min_amount: string | null; active: boolean; arkiv_entity_key: string | null; arkiv_tx_hash: string | null; arkiv_error: string | null; created_at: string };
 const COLUMNS = "id, merchant, code, kind, value::text, expires_at::text, max_redemptions, times_redeemed, min_amount::text, active, arkiv_entity_key, arkiv_tx_hash, arkiv_error, created_at::text";
@@ -331,7 +331,8 @@ export async function applyVoucher(merchant: string, code: string, sessionId: st
              WHERE v.id = $2 AND v.active AND v.expires_at > $8 AND v.times_redeemed + (
                SELECT count(*) FROM app_gw_redemptions r
                WHERE r.voucher_id = v.id AND r.confirmed_at IS NULL AND r.session_id <> $1 AND (r.created_at > $6 OR r.frozen_at > $7
-                 OR (r.frozen_at IS NOT NULL AND EXISTS (SELECT 1 FROM app_gw_checkouts p WHERE p.session_id = r.session_id AND p.paid_at IS NOT NULL)))
+                 OR (r.frozen_at IS NOT NULL AND (EXISTS (SELECT 1 FROM app_gw_checkouts p WHERE p.session_id = r.session_id AND p.paid_at IS NOT NULL)
+                   OR EXISTS (SELECT 1 FROM app_web_sessions s WHERE s.id = r.session_id AND (s.payment IS NOT NULL OR s.pending IS NOT NULL)))))
              ) < v.max_redemptions
              AND NOT EXISTS (SELECT 1 FROM app_gw_checkouts c WHERE c.session_id = $1 AND c.paid_at IS NOT NULL)
              ON CONFLICT (session_id) DO UPDATE SET voucher_id = EXCLUDED.voucher_id, discount = EXCLUDED.discount,
@@ -366,6 +367,22 @@ export async function amountDue(sessionId: string, now = Date.now()): Promise<bi
   return rows[0] ? BigInt(rows[0].usdt_amount) : checkout.usdtAmount;
 }
 
+/** The single-use rule, shared by linkTaken and claimAmountDue so they can't drift: another checkout `c` of the same
+ *  single-use link is paid, was claimed after `freezeAfter`, or its session holds a recorded payment or an attempt
+ *  whose outcome is unknown (code review 2026-11-08 F1). `self` and `freezeAfter` are the query's placeholders. */
+const siblingTaken = (self: string, freezeAfter: string) => `SELECT 1 FROM app_gw_checkouts o JOIN app_gw_links l ON l.id = o.ref_id
+                 WHERE c.kind = 'link' AND o.kind = 'link' AND o.ref_id = c.ref_id AND l.single_use AND o.session_id <> ${self}
+                   AND (o.paid_at IS NOT NULL OR o.claimed_at > ${freezeAfter} OR EXISTS (
+                     SELECT 1 FROM app_web_sessions s WHERE s.id = o.session_id AND (s.payment IS NOT NULL OR s.pending IS NOT NULL)))`;
+
+/** Read-only: true if this link checkout can't be paid because another checkout of its single-use link is paid or being
+ *  paid. The pay route asks first, so such a payer hears "already paid" before any balance or signature check (the claim
+ *  re-checks under its lock). */
+export async function linkTaken(sessionId: string, now = Date.now()): Promise<boolean> {
+  const rows = await query(`SELECT 1 FROM app_gw_checkouts c WHERE c.session_id = $1 AND EXISTS (${siblingTaken("$1", "$2")})`, [sessionId, now - FREEZE_MS]);
+  return rows.length > 0;
+}
+
 /**
  * The pay route's price (security S1) and claim (M3), in one transaction under a per-link lock:
  *   1. claims the checkout (claimed_at = now), refused with HttpError 410 when it is paid, or when it is a single-use
@@ -384,18 +401,17 @@ export async function claimAmountDue(sessionId: string, now = Date.now()): Promi
   // the lock serializes claims of one link or page: under READ COMMITTED the claim's snapshot is taken after it, so it
   // sees every other checkout's committed claim (two checkouts claiming at once: one wins). One statement claims and
   // freezes, so a refused claim freezes nothing.
-  // ponytail: the sibling check sees a paid checkout only once onSessionPaid has run markCheckoutPaid for it; if that
-  // call failed or ran late, the sibling relies on its claimed_at until FREEZE_MS ends. A retry of onSessionPaid (the
-  // pay route re-announces) closes the gap; a DB-level paid flag fed by the chain would close it for good.
+  // A sibling also blocks while its session holds a recorded payment (markCheckoutPaid may not have run yet) or an
+  // attempt whose outcome is still unknown (code review 2026-11-08 F1): such a payment may have landed, so the link must
+  // not take a second one after FREEZE_MS. settleSoon (lib/settle.ts) settles those sessions, so a dead attempt stops
+  // blocking once the chain says so.
   const [, rows] = await transaction([
     { text: "SELECT pg_advisory_xact_lock(hashtext($1))", params: [`link:${checkout.refId}`] },
     {
       text: `WITH claim AS (
                UPDATE app_gw_checkouts c SET claimed_at = $2
                WHERE c.session_id = $1 AND c.paid_at IS NULL AND NOT EXISTS (
-                 SELECT 1 FROM app_gw_checkouts o JOIN app_gw_links l ON l.id = o.ref_id
-                 WHERE c.kind = 'link' AND o.kind = 'link' AND o.ref_id = c.ref_id AND l.single_use AND o.session_id <> $1
-                   AND (o.paid_at IS NOT NULL OR o.claimed_at > $3))
+                 ${siblingTaken("$1", "$3")})
                RETURNING c.session_id
              ), frozen AS (
                UPDATE app_gw_redemptions r SET frozen_at = $2

@@ -16,6 +16,8 @@ const MERCHANT_PAY = "0x2222222222222222222222222222222222222222";
 // relayer 200 lands on chain unless `chain.dropsRelayed`.
 const chain = { paid: null, fails: false, reads: [], dropsRelayed: false };
 let balance = 1_000_000_000n;
+let balanceGate = Promise.resolve(); // a test can hold the balance read open (code review 2026-11-08 F2)
+let balanceReads = 0;
 mock.module("../lib/onchain.ts", {
   namedExports: {
     saleSettled: async (sale) => {
@@ -23,7 +25,11 @@ mock.module("../lib/onchain.ts", {
       if (chain.fails) throw new Error("rpc down");
       return chain.paid && chain.paid.amount === sale.amount && chain.paid.payer === sale.payer ? "7" : null;
     },
-    readUsdtBalance: async () => balance,
+    readUsdtBalance: async () => {
+      balanceReads++;
+      await balanceGate;
+      return balance;
+    },
     readPayment: async () => ({ merchant: MERCHANT, gross: 1n, payer: MERCHANT, refunded: 0n }),
   },
 });
@@ -60,6 +66,7 @@ beforeEach(async () => {
   await resetDb();
   Object.assign(chain, { paid: null, fails: false, reads: [], dropsRelayed: false });
   balance = 1_000_000_000n;
+  balanceGate = Promise.resolve();
   relayCalls.length = 0;
   relayReply = async () => relayed();
   process.env.MERCHANT_PAY_ADDRESS = MERCHANT_PAY;
@@ -366,13 +373,13 @@ test("the code route: link/page checkouts only, open ones only, plain words for 
   assert.equal((await applyCode(paid, "FIVE")).status, 410, "paid");
 });
 
-test("the code route is rate-limited per IP and checkout", async () => {
+test("the code route is rate-limited per IP and merchant across every checkout, so a new checkout buys no more guesses (code review 2026-11-08 F4)", async () => {
   await newVoucher("FIVE", { kind: "fixed", value: "5000000", max: 10 });
   const id = await linkCheckout(USDT(25));
   const statuses = [];
   for (let i = 0; i < 11; i++) statuses.push((await applyCode(id, "NOPE")).status);
   assert.deepEqual(statuses, [...Array(10).fill(400), 429]);
-  assert.equal((await applyCode(await linkCheckout(USDT(25)), "FIVE")).status, 200, "another checkout from the same IP is its own window");
+  assert.equal((await applyCode(await linkCheckout(USDT(25)), "FIVE")).status, 429, "another checkout from the same IP shares the window");
 });
 
 // --- the shop's own session and a failed read ------------------------------------------------------------------------
@@ -540,4 +547,81 @@ test("the checkout read runs while the body is still arriving (NFR-4)", async ()
   } finally {
     setTestDb(pgDb());
   }
+});
+
+// --- code review 2026-11-08 ---------------------------------------------------------------------------------------------
+test("F2: an attempt is checked before it claims a single-use link: while one waits on its balance read the link stays free", async () => {
+  await query("INSERT INTO app_gw_links (id, slug, merchant, amount, currency, description, single_use, created_at) VALUES ('lnk_once', 'slug_once', $1, $2, 'USDT', 'Once', true, $3)", [MERCHANT, USDT(25).toString(), Date.now()]);
+  const open = async () => {
+    const session = await createSession({ merchant: MERCHANT, merchantName: "Bandra Beans", amount: USDT(25), reference: "", items: [] });
+    await recordCheckout(session.id, "link", "lnk_once", MERCHANT, USDT(25));
+    return session.id;
+  };
+  const [spam, real] = [await open(), await open()];
+  let release;
+  balanceGate = new Promise((resolve) => (release = resolve));
+  balance = 0n;
+  const reads = balanceReads;
+  const attempt = callPay(spam, await signed(spam, USDT(25))); // a valid approval from an empty wallet
+  await eventually(async () => balanceReads > reads);
+  assert.equal(await claimAmountDue(real), USDT(25), "the waiting attempt hasn't claimed the link (before the fix it had: 410)");
+  release();
+  balanceGate = Promise.resolve();
+  assert.equal((await attempt).status, 400, "then refused: not funded");
+  balance = 1_000_000_000n;
+  assert.equal((await callPay(real, await signed(real, USDT(25)))).status, 200, "the real customer pays");
+  balance = 0n;
+  const late = await callPay(spam, await signed(spam, USDT(25)));
+  assert.deepEqual([late.status, late.data.error], [410, "This payment link has already been paid."], "the link's state first, not 'needs test USDT'");
+});
+
+test("write-ahead: the attempt is pending before the relay runs, and cleared when the relayer sent nothing (code review 2026-11-08)", async () => {
+  const id = await linkCheckout(USDT(25));
+  let seen;
+  relayReply = async () => {
+    seen = (await getSession(id)).pending;
+    return relayed();
+  };
+  assert.equal((await callPay(id, await signed(id, USDT(25)))).status, 200);
+  assert.equal(seen?.amount, USDT(25), "on record while the relay ran");
+  assert.ok(!(await getSession(id)).pending, "recorded: no longer pending");
+  const busy = await linkCheckout(USDT(25));
+  relayReply = async () => Response.json({ code: "gas_price_cap" }, { status: 503 });
+  assert.equal((await callPay(busy, await signed(busy, USDT(25)))).status, 503);
+  assert.ok(!(await getSession(busy)).pending, "nothing was sent: the attempt is cleared");
+  assert.equal(await frozen(busy), false);
+});
+
+test("F1: the sweep settles checkouts nobody came back to: a landed payment is recorded, a dead attempt is cleared", async () => {
+  const { settleStale } = await import("../lib/settle.ts");
+  const { markPending } = await import("../lib/sessions.ts");
+  const [landed, dead] = [await linkCheckout(USDT(25)), await linkCheckout(USDT(30))];
+  await claimAmountDue(dead); // the dead attempt had claimed its checkout
+  await markPending(landed, { from: customer.address, validBefore: BigInt(Math.floor(Date.now() / 1000) + 600), amount: USDT(25) });
+  await markPending(dead, { from: customer.address, validBefore: 1n, amount: USDT(30) });
+  chain.paid = { payer: customer.address, amount: USDT(25) }; // the relay timed out but landed
+  assert.equal(await settleStale(MERCHANT_PAY), 2);
+  assert.ok((await getSession(landed)).payment, "recorded without anyone reopening it");
+  await eventually(async () => (await query("SELECT paid_at FROM app_gw_checkouts WHERE session_id = $1", [landed]))[0].paid_at !== null); // announced
+  assert.ok(!(await getSession(dead)).pending, "dead: cleared");
+  assert.equal((await query("SELECT claimed_at FROM app_gw_checkouts WHERE session_id = $1", [dead]))[0].claimed_at, null, "and its claim released");
+});
+
+test("F1: settleSoon runs the sweep after a response at most once per instance every 30 s", async () => {
+  const { settleSoon } = await import("../lib/settle.ts");
+  const tasks = [];
+  const at = Date.now() + 60 * 60_000; // clear of any earlier run in this process
+  assert.equal(settleSoon((task) => tasks.push(task), at), true);
+  assert.equal(settleSoon((task) => tasks.push(task), at + 1_000), false);
+  assert.equal(settleSoon((task) => tasks.push(task), at + 31_000), true);
+  assert.equal(tasks.length, 2);
+});
+
+test("F4: only unknown codes count toward the merchant's ceiling, so guesses from many IPs are capped and a real code still works", async () => {
+  await newVoucher("FIVE", { kind: "fixed", value: "5000000", max: 10 });
+  const id = await linkCheckout(USDT(25));
+  const from = async (ip, code) => (await voucherRoute.POST(req("POST", `/api/v1/sessions/${id}/voucher`, { body: { code }, headers: { "x-forwarded-for": ip } }), params({ id }))).status;
+  for (let ip = 1; ip <= 6; ip++) for (let i = 0; i < 10; i++) assert.equal(await from(`198.51.100.${ip}`, `NOPE${i}`), 400);
+  assert.equal(await from("198.51.100.7", "NOPE"), 429, "the 61st miss this minute, from a fresh IP");
+  assert.equal(await from("198.51.100.7", "FIVE"), 200, "a real code isn't a miss");
 });

@@ -38,10 +38,9 @@ export function Shell({
             <div className="order-2 ml-auto flex items-center gap-x-2 text-xs text-ink-muted md:order-4 md:mt-auto md:ml-0 md:flex-col md:items-stretch md:gap-2 md:border-t md:border-hairline md:pt-4">
               <div className="hidden md:flex items-center justify-between text-xs text-ink-muted">
                 <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>Whitechain Testnet</span>
+                  <span className="h-2 w-2 rounded-full bg-positive shrink-0" />
+                  <span>Whitechain testnet</span>
                 </span>
-                <span className="eyebrow text-[10px]">1874</span>
               </div>
               <div className="flex items-center justify-between gap-2">{account}</div>
             </div>
@@ -61,7 +60,7 @@ export function Shell({
       </aside>
 
       {/* Main workspace canvas */}
-      <main className="min-w-0 pb-16">{children}</main>
+      <main id="main" className="min-w-0 pb-16">{children}</main>
     </div>
   );
 }
