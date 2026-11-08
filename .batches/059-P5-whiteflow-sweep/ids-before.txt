@@ -1,4 +1,0 @@
-mcplus         122
-MC-Signature   42
-mc_session     27
-WHITEFLOW_     79

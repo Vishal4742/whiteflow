@@ -3,7 +3,7 @@
 ETHGlobal asks teams to say where AI was used, down to files, and to commit spec files, prompts and planning artifacts. This file is that record. It is updated at every batch close.
 
 ## How we worked
-- **Human:** chose the idea and every product decision, approved each spec that was a product decision, saw every batch working before it shipped (the "human gate" in `PIPELINE.md`), answered the "grill me" questions, narrated the video and gives the pitch.
+- **Human:** chose the idea and every product decision, approved each spec that was a product decision, saw every batch working before it shipped (the pipeline's "human gate"), answered the "grill me" questions, narrated the video and gives the pitch.
 - **AI coding agents (Claude Code):** four sessions with fixed lanes: claude-contracts (`contracts/`, `packages/shared/`), claude-relayer (`apps/relayer/`), claude-frontend (`apps/web/`, `apps/shop/`), claude-research (docs). Subagents test and review each batch (tester, reviewer-code, reviewer-security, reviewer-ux-ui, ci). Outside models (Codex, Kimi K3) gave read-only second opinions on contract diffs.
 - **The process is enforced:** a hook blocks product-code edits unless a batch spec cites a requirement from `docs/SRS.md` (`tools/pipeline-gate.sh`).
 
@@ -11,9 +11,9 @@ ETHGlobal asks teams to say where AI was used, down to files, and to commit spec
 | File | What | Written |
 |---|---|---|
 | `docs/SRS.md` | Requirements, acceptance tests | Before the event (planning), approved by the human |
-| `ARCHITECTURE.md`, `PHASES.md`, `PIPELINE.md`, `AGENTS.md` | Design, delivery plan, process, rules | Before the event (planning) |
+| `ARCHITECTURE.md`, `PHASES.md`, `PIPELINE.md`, `AGENTS.md` | Design, delivery plan, process, rules | Before the event (planning); `PIPELINE.md` and `AGENTS.md` kept local, not in the public repo, since Nov 7 |
 | `research_notes/`, `research/`, `HANDOFF_LOG.md` | Prize research, Whitechain inventory, build-plan research, the agents' running log | Before and during the event; kept local, not in the public repo (competitive strategy) |
-| `.batches/NNN-*/` | Every change: spec, build reports, test and review verdicts | During the event |
+| `.batches/NNN-*/`, `notes/`, `.claude/` | Every change: spec, build reports, test and review verdicts; phase notes; agent definitions | During the event; kept local, not in the public repo, since Nov 7 |
 
 ## Per-file record (filled at each batch close)
 | File / folder | Written by | Reviewed by | Batch |
