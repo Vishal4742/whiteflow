@@ -118,4 +118,4 @@ Coverage of the four deployed contracts (`forge coverage --ir-minimum`): 99.1% o
 Pay from another chain, starting with one tested corridor (Ethereum Sepolia USDC into Whitechain USDT) with an exact amount and a refund path.
 
 ## Team and AI usage
-Built by the [Whiteflow contributors](https://github.com/Vishal4742/whiteflow/graphs/contributors) · AI usage per file: [`AI_USAGE.md`](AI_USAGE.md) · Changes: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) · Security: [`.github/SECURITY.md`](.github/SECURITY.md)
+Built by the [Whiteflow contributors](CONTRIBUTORS.md) ([graph](https://github.com/Vishal4742/whiteflow/graphs/contributors)) · AI usage per file: [`AI_USAGE.md`](AI_USAGE.md) · Changes: [`CHANGELOG.md`](CHANGELOG.md) · Contributing: [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) · Security: [`.github/SECURITY.md`](.github/SECURITY.md)
