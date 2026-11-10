@@ -43,6 +43,7 @@ docs/PITCH.md
 !/PHASES.md
 !/README.md
 !/WHITECHAIN_FEEDBACK.md
+!/CONTRIBUTORS.md
 # Pixa wallet source (MIT): a local reference copy. The parts adapted into packages/mcp are credited in README and packages/mcp/THIRD_PARTY_LICENSES
 /Pixa-main/
 # Pre-git snapshot of this repo that the Whiteflow sessions still work in
